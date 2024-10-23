@@ -1,0 +1,29 @@
+/* assets/style.css */
+
+/* General Layout Styles */
+body {
+    font-family: Arial, sans-serif;
+}
+
+#app-logo {
+    height: 50px;
+}
+
+#system-message-menu {
+    margin-bottom: 20px;
+}
+
+textarea, input {
+    width: 100%;
+}
+
+footer {
+    text-align: center;
+    background-color: #f1f1f1;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+button {
+    margin-top: 10px;
+}
