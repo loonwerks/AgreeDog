@@ -15,6 +15,7 @@ osate2-2.14.0-vfinal-linux.gtk.x86_64/
 instances/
 proof_analysis/
 git_actions/
+CqMARS-eval/
 agreeProject_user_defined_file_names_collector.py
 app.py
 callbacks.py
