@@ -1,0 +1,41 @@
+Step	0	1
+		
+		
+Actual_Speed.val	13	12
+Actual_Tire_Pitch.val	0	1.2
+State_Signal.val	0	0
+Target_Speed.val	143	2
+Target_Tire_Pitch.val	0	1.2
+[G_car_1] actual speed is less than or equal to target speed	1	0
+_TOP.AXL..ASSUME.HIST	1	1
+_TOP.CNTRL..ASSUME.HIST	1	1
+_TOP.SM..ASSUME.HIST	1	1
+_TOP.THROT..ASSUME.HIST	1	1
+const_tar_speed	1	0
+		
+AXL		
+AXL..ASSUME.HIST	1	1
+AXL.Actual_Tire_Direction.val	0	1.2
+AXL.Speed.val	46	45
+AXL.Target_Tire_Direction.val	0	1.2
+		
+CNTRL		
+CNTRL..ASSUME.HIST	1	1
+CNTRL.Actual.val	13	12
+CNTRL.Actuator_Input	130	-10
+CNTRL.Target.val	143	2
+CNTRL.e	130	-10
+CNTRL.e_dot	-130	140
+CNTRL.e_int	130	120
+CNTRL.u	130	-10
+		
+SM		
+SM..ASSUME.HIST	1	1
+SM.State_Out.val	0	0
+		
+THROT		
+THROT..ASSUME.HIST	1	1
+THROT.Actual.val	13	12
+THROT.Actuator_Input	130	-10
+
+
