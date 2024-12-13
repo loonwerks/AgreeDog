@@ -23,6 +23,7 @@ callbacks.py
 constants.py
 data_preperation_addl_comments_generation.py
 INSPECTADog_utils.py
+INSPECTADog_cmd_util.py
 layout.py
 pretty_print_conversation_messages_into_log.py
 user_defined_requirements.py
