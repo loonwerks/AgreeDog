@@ -17,7 +17,7 @@ pandas-profiling==3.2.0
 tiktoken==0.4.0
 plotly==5.15.0
 pyOpenSSL
-scikit-learn==1.0.2
+scikit-learn>=1.5.0
 
 
 
