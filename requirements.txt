@@ -1,4 +1,5 @@
 dash==2.10.2
+pydevd-pycharm~=223.0
 dash-bootstrap-components==1.4.1
 dash-core-components==2.0.0
 dash-html-components==2.0.0
@@ -6,7 +7,7 @@ dash-table==5.0.0
 openai==0.27.2
 python-dotenv==1.0.0
 gedit
-gunicorn==21.2.0
+gunicorn>=22.0.0
 matplotlib==3.5.1
 scipy==1.8.1
 dask==2021.10.0
@@ -16,6 +17,5 @@ pandas-profiling==3.2.0
 tiktoken==0.4.0
 plotly==5.15.0
 pyOpenSSL
-scikit-learn==1.0.2
-
+scikit-learn>=1.5.0
 
