@@ -1,0 +1,40 @@
+Step	0	1	2
+			
+			
+Actual_Speed.val	11	10	9.09090909090909
+Actual_Tire_Pitch.val	0	0.2	0
+State_Signal.val	0	0	0
+Target_Speed.val	121	0	0
+Target_Tire_Pitch.val	0	0.2	0
+[G_car_1] actual speed is less than constant target speed	1	1	0
+_TOP.AXL..ASSUME.HIST	1	1	1
+_TOP.CNTRL..ASSUME.HIST	1	1	1
+_TOP.SM..ASSUME.HIST	1	1	1
+_TOP.THROT..ASSUME.HIST	1	1	1
+const_tar_speed	1	0	1
+			
+AXL			
+AXL..ASSUME.HIST	1	1	1
+AXL.Actual_Tire_Direction.val	0	0.2	0
+AXL.Speed.val	46	46	46
+AXL.Target_Tire_Direction.val	0	0.2	0
+			
+CNTRL			
+CNTRL..ASSUME.HIST	1	1	1
+CNTRL.Actual.val	11	10	9.09090909090909
+CNTRL.Actuator_Input	110	-10	-9.09090909090909
+CNTRL.Target.val	121	0	0
+CNTRL.e	110	-10	-9.09090909090909
+CNTRL.e_dot	-110	120	-0.909090909090909
+CNTRL.e_int	110	100	-19.0909090909091
+CNTRL.u	110	-10	-9.09090909090909
+			
+SM			
+SM..ASSUME.HIST	1	1	1
+SM.State_Out.val	0	0	0
+			
+THROT			
+THROT..ASSUME.HIST	1	1	1
+THROT.Actual.val	11	10	9.09090909090909
+THROT.Actuator_Input	110	-10	-9.09090909090909
+

@@ -20,18 +20,18 @@ import zipfile
 import base64
 import subprocess
 
-import INSPECTA_Dog_Cli_Util
+import INSPECTA_Dog_cmd_util
 import INSPECTA_dog_system_msgs
 import time
 import sys
-from  INSPECTA_Dog_Cli_Util import *
+from  INSPECTA_Dog_cmd_util import *
 #import shutil
 from git_actions import *
 
 
 
 load_dotenv(find_dotenv())
-openai.api_key = os.getenv('OPENAI_API_KEY')
+openai.api_key = os.getenv('ant_OPENAI_API_KEY')
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -97,7 +97,7 @@ app.layout = dbc.Container([
         dcc.RadioItems(
             id='include-upload-folder',
             options=[
-                {"label": "Load additional context)", "value": "yes"},
+                {"label": "Load additional context", "value": "yes"},
                 {"label": "Use Osate2", "value": "no"},
             ],
             value="no",
@@ -187,7 +187,8 @@ def display_system_message_menu(n_clicks, style):
      Output('response-output', 'children'),
      Output('user-input', 'value'),
      Output('token-count', 'children'),
-     Output('timer-display', 'children')],
+     Output('timer-display', 'children'),
+     Output('context-added', 'children')],
     [Input('confirm-system-message-button', 'n_clicks'),
      Input('submit-button', 'n_clicks')],
     [State('system-message-choice', 'value'),
@@ -216,104 +217,116 @@ def handle_app_interactions(confirm_n_clicks, submit_n_clicks, system_message_ch
 
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
         print(f"Confirm button clicked, selected message: {system_message_choice}")
-        return set_system_message(conversation_history, system_message_choice)
+        # Set initial system message
+        ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
+        # We do not change context_added here
+        return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
     elif triggered_id == 'submit-button' and submit_n_clicks is not None:
         if start_time is None:
             start_time = datetime.now()
         user_input_original = user_input
         if submit_n_clicks is None:
-            return (conversation_history_json, "Enter your context and press 'Submit' to get a response.\n " \
-                                              "If the context is large you can select requirements chain and/or recommendation system ",
-                    user_input, f"Tokens used: {0}", f"Elapsed Time: {formatted_elapsed_time}")
+            return (conversation_history_json,
+                    "Enter your context and press 'Submit'.",
+                    user_input,
+                    f"Tokens used: {0}",
+                    f"Elapsed Time: {formatted_elapsed_time}",
+                    context_added)
 
         conversation_history_text = " ".join(msg['content'] for msg in conversation_history)
 
+        # Initialize conversation if empty
         if not conversation_history:
             conversation_history = [{'role': 'system',
                                      'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}]
             context_added = "false"
 
         upload_directory = "uploaded_dir"
-        # ToDO to support AGREE_Dog RAG with additional context such as manual, websites info, pdf/docx requirements files, etc..
         subdirectories = [os.path.join(upload_directory, d) for d in os.listdir(upload_directory) if
                           os.path.isdir(os.path.join(upload_directory, d))]
-        if not subdirectories and include_upload_folder == "yes":
-            return (conversation_history_json, "No subdirectory found in the uploaded directory.",
+        if include_upload_folder == "yes" and not subdirectories:
+            return (conversation_history_json,
+                    "No subdirectory found in the uploaded directory.",
                     user_input,
                     f"Tokens used: {0}",
-                    f"Elapsed Time: {formatted_elapsed_time}")
+                    f"Elapsed Time: {formatted_elapsed_time}",
+                    context_added)
 
-        if INSPECTA_Dog_Cli_Util.get_args().working_dir is not None:
-            # Retrieve the arguments
-            args = INSPECTA_Dog_Cli_Util.get_args()
+        # If command line arguments are provided
+        if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
+            args = INSPECTA_Dog_cmd_util.get_args()
             print(args.working_dir)
             print(args.counter_example)
             print(args.start_file)
-            target_directory = args.working_dir # parent of the statrt_file
-            if INSPECTA_Dog_Cli_Util.get_args().start_file is not None:
-                initial_file = INSPECTA_Dog_Cli_Util.get_args().start_file
-                #if INSPECTA_Dog_cmd_util.get_args().counter_example is not None:
-                #    cex = INSPECTA_Dog_cmd_util.get_args().counter_example ## add to UI as attachment for the manual version
+            target_directory = args.working_dir
+            if args.start_file is not None:
+                initial_file = args.start_file
         else:
-            target_directory = subdirectories[0]
+            # Use uploaded directory if no cmd args
+            target_directory = subdirectories[0] if subdirectories else ""
             print(target_directory)
 
         project_files = read_project_files(target_directory)
 
-        if include_requirements_chain == "yes" and initial_file and include_upload_folder == "no" and context_added == "false":
-            initial_file = remove_file_ext_from_cmd_like_ui(initial_file)
-            file_context = concatenate_imports(initial_file, project_files, target_directory,
-                                               include_requirements_chain,include_upload_folder,context_added)
-            if file_context and INSPECTA_Dog_Cli_Util.get_args().counter_example is not None:
-                cex_path = INSPECTA_Dog_Cli_Util.get_args().counter_example
+        # Only add initial context if it's not already added
+        if context_added == "false":
+            # If "Include requirements chain" is chosen
+            if include_requirements_chain == "yes" and initial_file and include_upload_folder == "no":
+                initial_file = remove_file_ext_from_cmd_like_ui(initial_file)
+                file_context = concatenate_imports(initial_file, project_files, target_directory,
+                                                   include_requirements_chain, include_upload_folder, context_added)
+                if file_context and INSPECTA_Dog_cmd_util.get_args().counter_example is not None:
+                    cex_path = INSPECTA_Dog_cmd_util.get_args().counter_example
+                    cex = read_counter_example_file(cex_path)
+                    prompt = set_prompt(file_context, cex)
+                    user_input = f"{prompt}\n{user_input}"
+                context_added = "true"
+
+            # If "Include requirements chain" is not chosen
+            elif (include_requirements_chain == "no" and initial_file and
+                  include_upload_folder == "no" and context_added == "false" and
+                  INSPECTA_Dog_cmd_util.get_args().counter_example is not None):
+                cex_path = INSPECTA_Dog_cmd_util.get_args().counter_example
                 cex = read_counter_example_file(cex_path)
-                prompt = set_prompt(file_context,cex)
+                start_file_with_ext = INSPECTA_Dog_cmd_util.get_args().start_file
+                working_dir = INSPECTA_Dog_cmd_util.get_args().working_dir
+                start_file_path = os.path.join(working_dir, start_file_with_ext)
+                start_file_content = read_start_file_content(start_file_path)
+                prompt = set_prompt(start_file_content, cex)
                 user_input = f"{prompt}\n{user_input}"
-            context_added = "true"
-        elif (include_requirements_chain == "no" and initial_file and include_upload_folder == "no"
-              and context_added == "false" and INSPECTA_Dog_Cli_Util.get_args().counter_example is not None):
-            cex_path = INSPECTA_Dog_Cli_Util.get_args().counter_example
-            cex = read_counter_example_file(cex_path)
-            start_file_with_ext = INSPECTA_Dog_Cli_Util.get_args().start_file
-            working_dir = INSPECTA_Dog_Cli_Util.get_args().working_dir
-            start_file_path = os.path.join(working_dir, start_file_with_ext)
-            start_file_content = read_start_file_content(start_file_path)
-            prompt = set_prompt(start_file_content,cex)
-            user_input = f"{prompt}\n{user_input}"
-            context_added = "true"
-        elif include_requirements_chain == "no" and initial_file and include_upload_folder == "yes" and context_added == "false":
-            user_input = user_input_original #ToDo update the logic to handle all preferences
+                context_added = "true"
+            elif include_requirements_chain == "no" and initial_file and include_upload_folder == "yes":
+                # If the user chooses to upload and not use requirements chain
+                # We do not re-add context from cmd line. User_input stays as-is.
+                # context_added remains "false" here until user decides to "Upload New Context" --> TODO
+                pass
 
+        # Append user input to conversation
         conversation_history.append({'role': 'user', 'content': user_input})
-
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
-
         response = response_obj.choices[0].message["content"]
-
         tokens_used = response_obj['usage']['total_tokens']
 
         conversation_history.append({'role': 'assistant', 'content': response})
-
         save_conversation_history_to_file(conversation_history)
-
         display_text = format_display_text(conversation_history, display_mode)
-
         warning = token_warning(model_choice, tokens_used)
-
         total_time_display = total_timedisplay(start_time, time_frames, total_api_time)
 
         return (json.dumps(conversation_history), display_text, "",
                 f"Tokens used : {tokens_used}" + warning,
-                total_time_display)
+                total_time_display,
+                context_added)
 
+    # Default return
     return conversation_history_json, "", "", "", (f"Elapsed Time: {formatted_elapsed_time}, "
-                                                   f"Total API Call Time: {total_api_time:.2f} seconds")  # Default return to avoid NoneType error
+                                                   f"Total API Call Time: {total_api_time:.2f} seconds"), context_added
 
 
 def set_prompt(aadl_content, counter_example_content):
     """Generates the initial prompt with AADL model and counterexample content, with a warning if counterexample is empty."""
-    if INSPECTA_Dog_Cli_Util.get_args().counter_example is None:
+    if INSPECTA_Dog_cmd_util.get_args().counter_example is None:
         # If the counterexample content is empty, provide a warning message in the prompt
         prompt = f"""
         For the following AADL model:
@@ -337,8 +350,8 @@ def set_prompt(aadl_content, counter_example_content):
 
 
 def remove_file_ext_from_cmd_like_ui(initial_file):
-    if INSPECTA_Dog_Cli_Util.get_args().start_file is not None:
-        initial_file = INSPECTA_Dog_Cli_Util.get_args().start_file
+    if INSPECTA_Dog_cmd_util.get_args().start_file is not None:
+        initial_file = INSPECTA_Dog_cmd_util.get_args().start_file
         initial_file_without_ext = initial_file[:-5]
         return initial_file_without_ext
     else:
@@ -424,7 +437,7 @@ def read_project_files(directory):
     Returns:
     - List of project file names (without extensions).
     """
-    if INSPECTA_Dog_Cli_Util.get_args().working_dir is not None:
+    if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
         agree_files = os.path.join(directory, "_AgreeFiles")
         if not os.path.exists(agree_files):
             create_agree_files_file(directory)
@@ -435,7 +448,7 @@ def read_project_files(directory):
             directory = os.path.join(directory, "packages")
             print(directory)
             print(agree_files)
-            INSPECTA_Dog_Cli_Util.create_agree_files_file(directory)
+            INSPECTA_Dog_cmd_util.create_agree_files_file(directory)
         agree_files = os.path.join(directory, "/_AgreeFiles")
 
     if not os.path.exists(agree_files):
@@ -587,7 +600,6 @@ def toggle_upload_visibility(include_upload):
      State('include-upload-folder', 'value')]
 )
 def handle_upload(contents, filename, include_upload):
-    """for additional context upload"""
     if contents is None or include_upload != "yes":
         return "Upload a folder containing the necessary files."
 
