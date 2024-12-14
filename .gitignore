@@ -17,6 +17,7 @@ instances/
 proof_analysis/
 git_actions/
 CqMARS-eval/
+CQAS_eval/
 agreeProject_user_defined_file_names_collector.py
 app.py
 callbacks.py
