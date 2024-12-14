@@ -19,14 +19,23 @@ def get_args():
         help="Path to the working directory containing the AADL files."
     )
     parser.add_argument(
+        "--user-open-api-key",
+        type=str,
+        required=False,
+        default=None,
+        help="API key for accessing external services (optional)."
+    )
+    parser.add_argument(
         "--counter-example",
         type=str,
+        required=False,
         default="",
         help="Path to the counterexample file (optional), we assume Agree will save it in a counter_examples directory."
     )
     parser.add_argument(
         "--start-file",
         type=str,
+        required=False,
         default="Car.aadl",
         help="Name of the specific AADL file to search for in the working directory (optional)."
     )
