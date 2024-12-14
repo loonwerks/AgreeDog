@@ -45,25 +45,47 @@ def create_agree_files_file(directory):
         f.write("")  # Create an empty file
     print(f"Created missing '_AgreeFiles' file in directory: {directory}")
 
-
 def get_agree_files_path(directory, working_dir_exists):
-    """Returns the path of the _AgreeFiles file, creating it if necessary."""
-    if working_dir_exists:
-        agree_files = os.path.join(directory, "_AgreeFiles")
-    else:
-        agree_files = os.path.join(directory, "packages/_AgreeFiles")
+    """
+    Returns the path of the _AgreeFiles file, ensuring it is updated with the latest .aadl files.
+    Issues a warning if the file did not exist initially.
+    """
+    agree_files = os.path.join(directory, "_AgreeFiles") if working_dir_exists else os.path.join(directory, "packages/_AgreeFiles")
 
-    # Check if _AgreeFiles exists, create it if not
-    if not os.path.exists(agree_files):
+    # Determine the path to search for .aadl files
+    parent_directory = directory if working_dir_exists else os.path.join(directory, "packages")
+
+    # Check if _AgreeFiles exists
+    file_existed = os.path.exists(agree_files)
+
+    # Update or create the _AgreeFiles file
+    update_agree_files_file(parent_directory, agree_files)
+
+    # Issue a warning if the file was created (did not exist before)
+    if not file_existed:
         warnings.warn(
-            f"The expected '_AgreeFiles' file was not found in the directory: {directory}. "
-            "The program will continue, but some functionality may be affected.",
+            f"The expected '_AgreeFiles' file was not found in the directory: {parent_directory}. "
+            "The AgreeDog has created and updated the file, "
+            "when an aadl file is added to a the training set it should be removed from this list.",
             UserWarning
         )
-        create_agree_files_file(directory if working_dir_exists else os.path.join(directory, "packages"))
-
 
     return agree_files
+
+def update_agree_files_file(directory, agree_files_path):
+    """Updates or creates the _AgreeFiles file with the .aadl files from the specified directory."""
+    try:
+        # Get all .aadl files in the directory
+        aadl_files = [f for f in os.listdir(directory) if f.endswith(".aadl")]
+
+        # Create or overwrite the _AgreeFiles file with the .aadl filenames
+        with open(agree_files_path, 'w') as agree_file:
+            for aadl_file in aadl_files:
+                agree_file.write(f"{aadl_file}\n")
+
+        print(f"_AgreeFiles updated at: {agree_files_path}")
+    except Exception as e:
+        print(f"Error updating _AgreeFiles: {e}")
 
 def read_counter_example_file(file_path):
     if file_path.endswith('.xls'):
@@ -95,7 +117,7 @@ def read_counter_example_file(file_path):
             return ""
 
     elif file_path.endswith('.txt') or file_path.endswith('.aadl'):
-        # Read as a standard text file
+        # Read aadl and txt as a standard text file
         try:
             with open(file_path, 'r') as f:
                 return f.read()
