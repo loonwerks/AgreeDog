@@ -1,5 +1,5 @@
-#import pydevd_pycharm
-#pydevd_pycharm.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True,suspend=False)
+import pydevd_pycharm
+pydevd_pycharm.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True,suspend=False)
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTADog copilot - ChatCompletion, and Multi-Modal Mode.
@@ -34,7 +34,7 @@ args = get_args()  # If --help is passed, argparse prints help and exits here.
 if args.user_open_api_key:
     openai.api_key = args.user_open_api_key
 else:
-    openai.api_key = os.getenv('ant_OPENAI_API_KEY')
+    openai.api_key = os.getenv('OPENAI_API_KEY')
 
 #load_dotenv(find_dotenv())
 #openai.api_key = os.getenv('ant_OPENAI_API_KEY')
@@ -665,4 +665,4 @@ def commit_and_push(n_clicks, commit_message):
             return f"An error occurred: {e}"
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host='127.0.0.1')
+    app.run_server(debug=True, host='127.0.0.1')

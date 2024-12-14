@@ -32,7 +32,7 @@ python 3.9.7):
     python INSPECTA_Dog.py --help
     ```
 
-### Example Usage
+### Example Usage 
 
 python INSPECTA_Dog.py 
   --working-dir path/to/work_dir 
@@ -40,9 +40,9 @@ python INSPECTA_Dog.py
   --counter-example path/to/counter_example.txt 
   --user-open-api-key [YOUR_API_KEY_HERE]
 
-You can adjust these paths and options as needed. For example, on Linux:
-
-### Example Command
+You can adjust these paths and options as needed. 
+## on Linux
+1. **Example Commandon 1**:
 
 ```bash
 python INSPECTA_Dog.py \
@@ -50,6 +50,17 @@ python INSPECTA_Dog.py \
   --counter-example /home/AgreeDog/counter_examples/car_model_cex_3.txt \
   --start-file Car.aadl \
   --user-open-api-key [YOUR_API_KEY_HERE]
-
+  ```
 
 Note: The --user-open-api-key option is optional. If you prefer, you can save your API key in the .env file located in the AgreeDog directory. If no key is provided, the application will attempt to read it from .env.
+
+## on Windows
+1. **Example Commandon 1**:
+
+```bash
+python INSPECTA_Dog.py \
+  --working-dir C:\Users\AgreeDog\uploaded_dir\car\packages \
+  --counter-example C:\Users\AgreeDog\counter_examples\car_model_cex_3.txt\
+  --start-file Car.aadl \
+  --user-open-api-key [YOUR_API_KEY_HERE]
+```
