@@ -49,7 +49,7 @@ python INSPECTA_Dog.py \
   --working-dir /home/AgreeDog/uploaded_dir/car/packages \
   --counter-example /home/AgreeDog/counter_examples/car_model_cex_3.txt \
   --start-file Car.aadl \
-  --user-open-api-key [YOUR_API_KEY_HERE]<br>
+  --user-open-api-key [YOUR_API_KEY_HERE]
 
 
 Note: The --user-open-api-key option is optional. If you prefer, you can save your API key in the .env file located in the AgreeDog directory. If no key is provided, the application will attempt to read it from .env.
