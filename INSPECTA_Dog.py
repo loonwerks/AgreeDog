@@ -34,6 +34,7 @@ args = get_args()  # If --help is passed, argparse prints help and exits here.
 if args.user_open_api_key:
     openai.api_key = args.user_open_api_key
 else:
+    load_dotenv(find_dotenv())
     openai.api_key = os.getenv('OPENAI_API_KEY')
 
 #load_dotenv(find_dotenv())
