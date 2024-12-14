@@ -30,7 +30,13 @@ python 3.9.7):
 3. **Run the script with `--help`** to see available options:
     ```bash
     python INSPECTA_Dog.py --help
-    ```
+    ``` 
+   e.g., on Windows:
+    ```bash 
+       PS C:\Users\amer_\AgreeDog> python INSPECTA_Dog.py --help
+       usage: INSPECTA_Dog.py [-h] [--working-dir WORKING_DIR] [--user-open-api-key USER_OPEN_API_KEY]
+       [--counter-example COUNTER_EXAMPLE] [--start-file START_FILE]
+   ```
 
 ### Example Usage 
 
@@ -42,7 +48,7 @@ python INSPECTA_Dog.py
 
 You can adjust these paths and options as needed. 
 ## on Linux
-1. **Example Commandon 1**:
+1. **Example of cli**:
 
 ```bash
 python INSPECTA_Dog.py \
@@ -55,7 +61,7 @@ python INSPECTA_Dog.py \
 Note: The --user-open-api-key option is optional. If you prefer, you can save your API key in the .env file located in the AgreeDog directory. If no key is provided, the application will attempt to read it from .env.
 
 ## on Windows
-1. **Example Commandon 1**:
+1. **Example of cli**:
 
 ```bash
 python INSPECTA_Dog.py \
