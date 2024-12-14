@@ -3,7 +3,7 @@ AgreeDog is an AI-Copilot for the AGREE tool, designed to enhance AADL-based sys
 
 We recently presented a workshop paper on AgreeDog and are actively developing a command-line interface for seamless integration into automated pipelines. The first official release is expected in Spring 2025.
 
-## How to Run INSPECTA-Dog from the Command Line
+## How to Run Agree-Dog from the Command Line
 
 You can run the INSPECTA-Dog application directly from the command line.  
 First, ensure you have activated your Python virtual environment (tested on 
@@ -58,8 +58,6 @@ python INSPECTA_Dog.py \
   --user-open-api-key [YOUR_API_KEY_HERE]
   ```
 
-Note: The --user-open-api-key option is optional. If you prefer, you can save your API key in the .env file located in the AgreeDog directory. If no key is provided, the application will attempt to read it from .env.
-
 ## on Windows
 1. **Example of cli**:
 
@@ -70,3 +68,17 @@ python INSPECTA_Dog.py \
   --start-file Car.aadl \
   --user-open-api-key [YOUR_API_KEY_HERE]
 ```
+
+   > **Note:** The --user-open-api-key option is optional. If you prefer, you can save your API key in the .env file located in the AgreeDog directory. If no key is provided, the application will attempt to read it from .env.
+   
+### Debugging Instructions
+
+To enable or disable debugging mode in `INSPECTA_Dog.py`:
+
+1. **Comment out the first two lines of `INSPECTA_Dog.py`**:
+   These lines are specifically meant for debugging mode.
+
+2. **Set the `debug` flag in the last line of the file to `False`**:
+   This ensures that the application runs without debugging enabled.
+
+   > **Note:** Debugging mode is designed for development purposes. In this mode, you can set up a PyCharm debug configuration and specify the command-line flags one time. This allows you to save time while testing and debugging your application.
