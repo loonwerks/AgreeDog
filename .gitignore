@@ -36,3 +36,4 @@ shared_history/*
 !shared_history/conversation_history_20241114_095820.json
 ./_Agreefiles
 ./Integer_Toy.aadl
+uploaded_dir/Integer_Toy.aadl
