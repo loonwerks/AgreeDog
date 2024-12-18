@@ -28,6 +28,10 @@ from  INSPECTA_Dog_cmd_util import *
 #import shutil
 from git_actions import *
 
+# Ensure necessary directories exist
+directories = ["uploaded_dir", "conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
+INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
+
 args = get_args()  # If --help is passed, argparse prints help and exits here.
 
 # After loading environment variables, modify how openai.api_key is set:
@@ -64,7 +68,7 @@ app.layout = dbc.Container([
 
     # Header with logo, title, and button
     html.Div([
-        html.Img(src="assets/coqdog-5.png", id="app-logo", style={
+        html.Img(src= "assets/coqdog-5.png", id="app-logo", style={
             "display": "inline-block",
             "height": "50px",
             "vertical-align": "middle"
@@ -249,7 +253,7 @@ def handle_app_interactions(confirm_n_clicks, submit_n_clicks, system_message_ch
                                      'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}]
             context_added = "false"
 
-        upload_directory = "uploaded_dir"
+        upload_directory = get_resource_path("uploaded_dir") # "uploaded_dir"
         subdirectories = [os.path.join(upload_directory, d) for d in os.listdir(upload_directory) if
                           os.path.isdir(os.path.join(upload_directory, d))]
         if include_upload_folder == "yes" and not subdirectories:
@@ -666,4 +670,9 @@ def commit_and_push(n_clicks, commit_message):
             return f"An error occurred: {e}"
 
 if __name__ == '__main__':
-    app.run_server(debug=False, host='127.0.0.1')
+  # Ensure directories exist and if not create them
+    print("Starting the dash server...")
+    try:
+        app.run_server(debug=False, host='127.0.0.1', port=8050)
+    except KeyboardInterrupt:
+        print("Ctrl+x shutting down the server gracefully.")
