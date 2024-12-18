@@ -4,6 +4,7 @@ Description: INSPECTADog basic cmd line utilities.
 Date: July 2024
 """
 import os
+import sys
 import shutil
 import argparse
 import warnings
@@ -137,3 +138,28 @@ def read_counter_example_file(file_path):
         except Exception as e:
             print(f"Error reading text file: {e}")
             return ""
+
+# Helper function to dynamically locate resource paths
+def get_resource_path(relative_path):
+    """
+    Dynamically resolve file paths for PyInstaller bundles and development environments.
+    """
+    if getattr(sys, 'frozen', False):  # Running as a PyInstaller bundle
+        base_path = sys._MEIPASS
+    else:  # Development environment
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+def ensure_writable_directories(directories):
+    """
+    Ensure necessary directories exist, creating them if needed.
+    Args:
+        directories (list): List of directories to ensure.
+    """
+    for directory in directories:
+        full_path = get_resource_path(directory)
+        if not os.path.exists(full_path):
+            os.makedirs(full_path)
+            print(f"Created directory: {full_path}")
+        else:
+            print(f"Directory exists: {full_path}")
