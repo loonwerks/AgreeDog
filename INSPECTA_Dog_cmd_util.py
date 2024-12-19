@@ -5,7 +5,7 @@ Date: July 2024
 """
 import os
 import sys
-import shutil
+#import shutil
 import argparse
 import warnings
 import pandas as pd
@@ -143,11 +143,21 @@ def read_counter_example_file(file_path):
 def get_resource_path(relative_path):
     """
     Dynamically resolve file paths for PyInstaller bundles and development environments.
+    For specific directories or files, use sys._MEIPASS when running as a PyInstaller bundle.
     """
-    if getattr(sys, 'frozen', False):  # Running as a PyInstaller bundle
+    pre_bundled_added_data_to_pyinstaller = {"uploaded_dir", "assets",
+                                             "config.json"}  # Directories or files that require sys._MEIPASS
+
+    # Extract the base name from the relative path (directory or file name)
+    base_name = os.path.basename(relative_path)
+
+    if getattr(sys, 'frozen', False) and base_name in pre_bundled_added_data_to_pyinstaller:
+        # Running as a PyInstaller bundle and resource is in the specific set
         base_path = sys._MEIPASS
-    else:  # Development environment
+    else:
+        # Default behavior: Use the absolute path of the current directory
         base_path = os.path.abspath(".")
+
     return os.path.join(base_path, relative_path)
 
 def ensure_writable_directories(directories):
