@@ -5,10 +5,12 @@
 Description: INSPECTADog copilot - ChatCompletion, and Multi-Modal Mode.
 Date: July 2024
 """
-import os
-import warnings
-import re
-import json
+import os.path
+
+#import os
+#import warnings
+#import re
+#import json
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
@@ -18,18 +20,18 @@ from dotenv import load_dotenv, find_dotenv
 from datetime import datetime, timedelta
 import zipfile
 import base64
-import subprocess
+#import subprocess
 
 import INSPECTA_Dog_cmd_util
 import INSPECTA_dog_system_msgs
 import time
-import sys
+#import sys
 from  INSPECTA_Dog_cmd_util import *
 #import shutil
 from git_actions import *
 
 # Ensure necessary directories exist
-directories = ["uploaded_dir", "conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
+directories = ["conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
 INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
 
 args = get_args()  # If --help is passed, argparse prints help and exits here.
@@ -617,7 +619,8 @@ def handle_upload(contents, filename, include_upload):
     content_type, content_string = contents.split(',')
     decoded = base64.b64decode(content_string)
 
-    upload_directory = "uploaded_dir"
+    current_dir_path= os.path.abspath(".")
+    upload_directory = os.path.join(current_dir_path,"uploaded_dir")
     if not os.path.exists(upload_directory):
         os.makedirs(upload_directory)
 
