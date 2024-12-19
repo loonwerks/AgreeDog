@@ -1,4 +1,10 @@
 #!/bin/bash
+# Script Name: optimized_agree_dog_bin_builder.sh
+# Author: Amer N Tahat,  Collins Aerospace.
+# Date: 18 Dec 2024
+# Version: 1.0
+# Description: This script creates a single-dir binary -- assuming Python 3.9.7 bin path /usr/local/bin/pyhton3.
+# TODO autoamte python installation
 
 # Exit on any error
 set -e

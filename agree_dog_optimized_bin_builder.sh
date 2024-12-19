@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Script Name: optimized_agree_dog_bin_builder.sh
 # Author: Amer N Tahat,  Collins Aerospace. 
 # Date: 18 Dec 2024
