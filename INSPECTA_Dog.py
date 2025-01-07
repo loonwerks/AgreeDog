@@ -85,7 +85,7 @@ app.layout = dbc.Container([
             }
         ),
         html.H1(
-            "INSPECTA-Dog-Team",
+            "AGREE-Dog ",
             style={
                 "display": "inline-block",
                 "vertical-align": "middle",
@@ -104,7 +104,7 @@ app.layout = dbc.Container([
             dcc.RadioItems(
                 id='system-message-choice',
                 options=[
-                    {"label": "CoqDog System Message", "value": "CoqDog"},
+                    {"label": "JKind SMTSolvers AI selector", "value": "Enable JKind SMTSolvers selector", "disabled": True}, # used to be CoqDog System Message
                     {"label": "AgreeDog System Message", "value": "AgreeDog"}
                 ],
                 value="AgreeDog"
@@ -139,7 +139,7 @@ app.layout = dbc.Container([
                     {"label": "GPT-4o multi-modal (128k tk)", "value": "gpt-4o"},
                     {"label": "GPT-4-Turbo (128k tk)", "value": "gpt-4-turbo"},
                     {"label": "GPT-4 (8k tk)", "value": "gpt-4-0613", "disabled": True},
-                    {"label": "GPT-3.5 (16K tk)", "value": "gpt-3.5-turbo-16k-0613", "disabled": True},
+                    #{"label": "GPT-3.5 (16K tk)", "value": "gpt-3.5-turbo-16k-0613", "disabled": True},
                 ],
                 value="gpt-4o",
                 inline=True,
@@ -155,16 +155,16 @@ app.layout = dbc.Container([
                 inline=True,
                 style={"margin-top": "10px"}
             ),
-            dcc.RadioItems(
-                id="use-recommendation",
-                options=[
-                    {"label": "Use Copland Customized Recommendation System", "value": "yes", "disabled": True},
-                    {"label": "Don't Use Recommendation System", "value": "no", "disabled": True},
-                ],
-                value="no",
-                inline=True,
-                style={"margin-top": "10px"}
-            ),
+            #dcc.RadioItems(
+            #    id="use-recommendation",
+            #    options=[
+            #        {"label": "Use Copland Customized Recommendation System", "value": "yes", "disabled": True},
+            #        {"label": "Don't Use Recommendation System", "value": "no", "disabled": True},
+            #    ],
+            #    value="no",
+            #    inline=True,
+            #    style={"margin-top": "10px"}
+            #),
         ]
     ),
 
