@@ -3,7 +3,7 @@
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
-Date: July 2024
+Date: 1 July 2024
 """
 import os.path
 import dash
@@ -85,7 +85,7 @@ app.layout = dbc.Container([
             }
         ),
         html.H1(
-            "AGREE-Dog ",
+            "AGREE-Dog",
             style={
                 "display": "inline-block",
                 "vertical-align": "middle",
@@ -104,7 +104,11 @@ app.layout = dbc.Container([
             dcc.RadioItems(
                 id='system-message-choice',
                 options=[
-                    {"label": "JKind SMTSolvers AI selector", "value": "Enable JKind SMTSolvers selector", "disabled": True}, # used to be CoqDog System Message
+                    {
+                        "label": "JKind SMTSolvers AI selector",
+                        "value": "Enable JKind SMTSolvers selector",
+                        "disabled": True
+                    },
                     {"label": "AgreeDog System Message", "value": "AgreeDog"}
                 ],
                 value="AgreeDog"
@@ -112,7 +116,7 @@ app.layout = dbc.Container([
             dbc.Button("Confirm Selection", id='confirm-system-message-button', color="primary", className="mr-1"),
             html.Hr(),
 
-            # 2) Move advanced items here
+            # 2) Advanced items
             dcc.RadioItems(
                 id='include-upload-folder',
                 options=[
@@ -126,8 +130,8 @@ app.layout = dbc.Container([
             dcc.RadioItems(
                 id='include-requirements-chain',
                 options=[
-                    {"label": "Include requirement chain", "value": "yes"},
-                    {"label": "Don't include requirement chain", "value": "no"},
+                    {"label": "Include import chain", "value": "yes"},
+                    {"label": "Don't include import chain", "value": "no"},
                 ],
                 value="no",
                 inline=True,
@@ -139,7 +143,6 @@ app.layout = dbc.Container([
                     {"label": "GPT-4o multi-modal (128k tk)", "value": "gpt-4o"},
                     {"label": "GPT-4-Turbo (128k tk)", "value": "gpt-4-turbo"},
                     {"label": "GPT-4 (8k tk)", "value": "gpt-4-0613", "disabled": True},
-                    #{"label": "GPT-3.5 (16K tk)", "value": "gpt-3.5-turbo-16k-0613", "disabled": True},
                 ],
                 value="gpt-4o",
                 inline=True,
@@ -151,20 +154,10 @@ app.layout = dbc.Container([
                     {"label": "Full History", "value": "full"},
                     {"label": "Last Response", "value": "last"},
                 ],
-                value="full",
+                value="last",
                 inline=True,
                 style={"margin-top": "10px"}
             ),
-            #dcc.RadioItems(
-            #    id="use-recommendation",
-            #    options=[
-            #        {"label": "Use Copland Customized Recommendation System", "value": "yes", "disabled": True},
-            #        {"label": "Don't Use Recommendation System", "value": "no", "disabled": True},
-            #    ],
-            #    value="no",
-            #    inline=True,
-            #    style={"margin-top": "10px"}
-            #),
         ]
     ),
 
@@ -175,7 +168,7 @@ app.layout = dbc.Container([
         placeholder='Enter your context...'
     ),
 
-    # 3) The "Enter the start file" input – initially hidden
+    # The "Enter the start file" input – initially hidden
     html.Div(
         id='initial-file-div',
         style={"display": "none"},  # hidden by default; toggled by callback
@@ -189,14 +182,14 @@ app.layout = dbc.Container([
         ]
     ),
 
-    # 4) Buttons row: Submit, Save, Upload Folder (optional)
+    # Buttons row: Submit, Save, Upload Folder (optional)
     html.Div([
         dbc.Button("Submit", id='submit-button', color="primary", className="mr-1"),
         dbc.Button("Save", id='copy-button', color="secondary", className="mr-1"),
-        # We wrap the Upload Folder button in a small div that we can show/hide:
+        # The Upload Folder button, toggled by callback
         html.Div(
             id='upload-folder-div',
-            style={"display": "none"},  # hidden by default; toggled by callback
+            style={"display": "none"},
             children=[
                 dcc.Upload(
                     id='upload-folder',
@@ -261,7 +254,6 @@ def toggle_system_message_menu(gear_clicks, style):
     if not gear_clicks:
         return style  # If button was never clicked, do nothing
 
-    # If the 'display' is "none", show it; otherwise hide it
     if style["display"] == "none":
         style["display"] = "block"
     else:
@@ -319,7 +311,6 @@ def toggle_initial_file_div(include_upload):
         State('context-added', 'children'),
         State('model-choice', 'value'),
         State('display-mode', 'value'),
-        State('use-recommendation', 'value'),
         State('user-input', 'value'),
         State('initial-file', 'value'),
         State('include-requirements-chain', 'value'),
@@ -333,7 +324,6 @@ def handle_app_interactions(confirm_n_clicks,
                             context_added,
                             model_choice,
                             display_mode,
-                            use_recommendation,
                             user_input,
                             initial_file,
                             include_requirements_chain,
@@ -357,7 +347,6 @@ def handle_app_interactions(confirm_n_clicks,
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
         print(f"Confirm button clicked, selected message: {system_message_choice}")
         ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
-        # We do not change context_added here
         return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
     # 2B) User Input Submission
@@ -415,7 +404,6 @@ def handle_app_interactions(confirm_n_clicks,
 
         # Only add initial context if it's not already added
         if context_added == "false":
-            # If "Include requirements chain" is chosen
             if include_requirements_chain == "yes" and initial_file and include_upload_folder == "no":
                 initial_file = remove_file_ext_from_cmd_like_ui(initial_file)
                 file_context = concatenate_imports(
@@ -433,7 +421,6 @@ def handle_app_interactions(confirm_n_clicks,
                     user_input = f"{prompt}\n{user_input}"
                 context_added = "true"
 
-            # If "Include requirements chain" is not chosen
             elif (
                 include_requirements_chain == "no"
                 and initial_file
@@ -492,7 +479,6 @@ def handle_app_interactions(confirm_n_clicks,
         context_added
     )
 
-
 # -------------------- Utility Functions --------------------
 def set_prompt(aadl_content, counter_example_content):
     """Generates the initial prompt with AADL model and counterexample content."""
@@ -515,6 +501,7 @@ def set_prompt(aadl_content, counter_example_content):
         {counter_example_content}
 
         Can you explain why and how to fix it?
+        Write the modified AADL code between ``` ```
         """
     return prompt
 
@@ -693,29 +680,44 @@ def highlight_keywords(text):
     return elements
 
 
+# -------------------- FIXED: format_display_text last response keywords--------------------
 def format_display_text(conversation_history, display_mode):
     if display_mode == "full":
         display_elements = []
         for message in conversation_history:
+            # Skip system messages
+            if message['role'] == 'system':
+                continue
+
             if message['role'] == 'user':
                 label = html.Span("User:", style={'color': 'blue'})
-            elif message['role'] == 'assistant':
-                label = html.Span("INSPECTA-Dog:", style={'color': 'red'})
             else:
-                continue
+                label = html.Span("AGREE-Dog:", style={'color': 'red'})
+
             display_elements.append(label)
             display_elements.extend(
                 highlight_keywords(" " + message['content'] + "\n\n")
             )
         return display_elements
-    else:
+
+    else:  # "last" mode
+        # We still show the last message, whether user or assistant
         last_message = conversation_history[-1]
+        if last_message['role'] == 'system':
+            # If for some reason the last message is system,
+            # you'd want to handle that or just skip it.
+            # One approach: skip to the last non-system message.
+            # For simplicity, let's just return an empty list or a note:
+            return [html.Span("(No user/assistant message yet.)", style={'color': 'gray'})]
+
         if last_message['role'] == 'user':
             label = html.Span("User:", style={'color': 'blue'})
         else:
-            label = html.Span("INSPECTA-Dog:", style={'color': 'red'})
-        return [label, " " + last_message['content']]
+            label = html.Span("AGREE-Dog:", style={'color': 'red'})
 
+        highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
+        return [label] + highlighted_last
+# ----------------------------------------------------------
 
 @app.callback(
     Output('copy-status', 'children'),
@@ -822,4 +824,3 @@ if __name__ == '__main__':
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         print("Shutting down the server gracefully.")
-
