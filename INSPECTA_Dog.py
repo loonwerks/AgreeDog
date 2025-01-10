@@ -749,7 +749,7 @@ def construct_requirements_section(requirements_file_cont):
 
 def construct_prompt(aadl_content, counter_example_content, requirements_section):
     """
-    Constructs the final prompt based on the presence of counterexample content.
+    Constructs the final prompt based on the presence of counterexample content and the requirements files.
 
     Args:
         aadl_content (str): Content of the AADL model.
