@@ -3,9 +3,12 @@
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
-Date: 1 July 2024
+Date: 1st July 2024
 """
-import os.path
+import os
+from http.cookiejar import user_domain_match
+from importlib.metadata import requires
+
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
@@ -18,9 +21,10 @@ import base64
 import json
 import warnings
 import time
-import os
+import threading  # Import threading
+from flask import request  # Import Flask's request
 
-# Your utility imports
+# Utility imports
 import INSPECTA_Dog_cmd_util
 import INSPECTA_dog_system_msgs
 from INSPECTA_Dog_cmd_util import *
@@ -30,7 +34,8 @@ from git_actions import *
 directories = ["conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
 INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
 
-args = get_args()  # If --help is passed, argparse prints help and exits here.
+# Parse command-line arguments
+args = INSPECTA_Dog_cmd_util.get_args()  # If --help is passed, argparse prints help and exits here.
 
 # After loading environment variables, modify how openai.api_key is set:
 if args.user_open_api_key:
@@ -39,6 +44,34 @@ else:
     load_dotenv(find_dotenv())
     openai.api_key = os.getenv('OPENAI_API_KEY')
 
+# -------------------- Process requirement.txt File --------------------
+# Initialize a variable to hold requirement contents
+requirements_content = ""
+
+
+def req_content():
+    global f, requirements_content, e
+    if args.requirement_file:
+        requirement_path = args.requirement_file
+        if os.path.isfile(requirement_path):
+            print(f"Requirement file provided: {requirement_path}")
+            try:
+                with open(requirement_path, 'r') as f:
+                    requirements_content = f.read()
+                print("Contents of requirement.txt:")
+                print(requirements_content)
+                content = requirements_content
+                return content
+                # test
+            except Exception as e:
+                print(f"Error reading requirement file: {e}")
+        else:
+            print(f"Requirement file not found at: {requirement_path}")
+    else:
+        print("No requirement.txt file provided.")
+
+req_content()
+requirements_file_content = req_content()
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -58,6 +91,18 @@ gear_button = dbc.Button(
     style={"display": "inline-block", "vertical-align": "middle"}
 )
 
+shutdown_button = dbc.Button(
+    [
+        html.I(className="fa fa-power-off", style={"margin-right": "5px"}),
+        "Shutdown Server"
+    ],
+    id="shutdown-button",
+    color="danger",
+    className="ml-3",
+    style={"display": "inline-block", "vertical-align": "middle"}
+)
+
+# -------------------- Layout with Shutdown Features --------------------
 app.layout = dbc.Container([
     # Footer
     html.Footer([
@@ -73,7 +118,7 @@ app.layout = dbc.Container([
         "margin-bottom": "20px"
     }),
 
-    # Header with logo, title, and gear button
+    # Header with logo, title, gear button, and shutdown button
     html.Div([
         html.Img(
             src="assets/coqdog-5.png",
@@ -92,7 +137,8 @@ app.layout = dbc.Container([
                 "margin-left": "20px"
             }
         ),
-        gear_button
+        gear_button,
+        shutdown_button  # Add the shutdown button here
     ], style={"display": "flex", "align-items": "center", "margin-bottom": "20px"}),
 
     # -------------------- Settings Menu --------------------
@@ -226,8 +272,22 @@ app.layout = dbc.Container([
         style={"margin-top": "20px"}
     ),
     dbc.Button("Git Commit and Push", id='git-commit-push', color="success", className="mr-1"),
-    html.Div(id='push-status', style={"margin-top": "20px"})
-])
+    html.Div(id='push-status', style={"margin-top": "20px"}),
+
+    # -------------------- Shutdown Confirmation Modal --------------------
+    dbc.Modal([
+        dbc.ModalHeader("Confirm Shutdown"),
+        dbc.ModalBody("Are you sure you want to shut down the server? This action cannot be undone."),
+        dbc.ModalFooter([
+            dbc.Button("Yes, Shutdown", id="confirm-shutdown", color="danger"),
+            dbc.Button("Cancel", id="cancel-shutdown", className="ml-2")
+        ])
+    ], id="shutdown-modal", is_open=False),
+
+    # Shutdown status message
+    html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
+
+], fluid=True)
 
 # -------------------- Global Timer Variables --------------------
 total_api_time = 0
@@ -235,7 +295,6 @@ time_frames = []
 start_time = None
 elapsed_time = timedelta(0)
 formatted_elapsed_time = "00:00:00.00"
-
 
 # -------------------- Callbacks --------------------
 
@@ -339,7 +398,10 @@ def handle_app_interactions(confirm_n_clicks,
 
     # Determine which button was clicked
     ctx = dash.callback_context
-    triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    if not ctx.triggered:
+        triggered_id = 'No clicks yet'
+    else:
+        triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     conversation_history = json.loads(conversation_history_json)
 
@@ -391,10 +453,10 @@ def handle_app_interactions(confirm_n_clicks,
 
         # If command line arguments are provided
         if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
-            args = INSPECTA_Dog_cmd_util.get_args()
-            target_directory = args.working_dir
-            if args.start_file is not None:
-                initial_file = args.start_file
+            args_local = INSPECTA_Dog_cmd_util.get_args()
+            target_directory = args_local.working_dir
+            if args_local.start_file is not None:
+                initial_file = args_local.start_file
         else:
             # Use uploaded directory if no cmd args
             target_directory = subdirectories[0] if subdirectories else ""
@@ -447,6 +509,13 @@ def handle_app_interactions(confirm_n_clicks,
                 # we do not re-add context from cmd line. user_input stays as-is.
                 pass
 
+        # Integrate requirements_content if provided
+        if requirements_file_content:
+            requirements_hint = f"When you modify the code or try to write the fixed code consider the following \
+            requirements and make sure your modifications don't break them:\n{requirements_file_content}"
+            user_input = f"\n{user_input}"
+            print("Integrated requirements.txt content into user input.")
+
         # Append user input to conversation
         conversation_history.append({'role': 'user', 'content': user_input})
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
@@ -468,43 +537,271 @@ def handle_app_interactions(confirm_n_clicks,
             context_added
         )
 
-    # Default return
-    return (
-        conversation_history_json,
-        "",
-        "",
-        "",
-        (f"Elapsed Time: {formatted_elapsed_time}, "
-         f"Total API Call Time: {total_api_time:.2f} seconds"),
-        context_added
+# 4) Toggle the Shutdown Confirmation Modal
+@app.callback(
+    Output("shutdown-modal", "is_open"),
+    [
+        Input("shutdown-button", "n_clicks"),
+        Input("confirm-shutdown", "n_clicks"),
+        Input("cancel-shutdown", "n_clicks")
+    ],
+    [State("shutdown-modal", "is_open")],
+)
+def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
+    ctx = dash.callback_context
+
+    if not ctx.triggered:
+        return is_open
+    button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if button_id == "shutdown-button" and shutdown_click:
+        return True
+    elif button_id in ["confirm-shutdown", "cancel-shutdown"]:
+        return False
+    return is_open
+
+# 5) Shutdown Callback with Forceful Termination
+@app.callback(
+    Output('shutdown-status', 'children'),
+    Input('confirm-shutdown', 'n_clicks'),
+    prevent_initial_call=True
+)
+def shutdown_server(n_clicks):
+    if n_clicks:
+        def force_shutdown():
+            os._exit(0)  # Forcefully terminate the process
+
+        # Start the shutdown in a separate thread for immediate effect
+        thread = threading.Thread(target=force_shutdown)
+        thread.start()
+
+        return "Server is shutting down immediately..."
+    return ""
+
+@app.callback(
+    Output('copy-status', 'children'),
+    Input('copy-button', 'n_clicks'),
+    State('conversation-history', 'children'),
+    prevent_initial_call=True
+)
+def copy_conversation_history(n_clicks, conversation_history_json):
+    global total_api_time
+    if n_clicks is None:
+        return "Click the button to copy the conversation history."
+
+    total_time_display = f"Total API Call Time: {total_api_time:.2f} seconds"
+    conversation_history = json.loads(conversation_history_json)
+    conversation_history.append({'role': 'system', 'content': total_time_display})
+
+    source_file = 'conversation_history/conversation_history.json'
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    destination_dir = 'temp_history'
+    destination_file = f'{destination_dir}/conversation_history_{timestamp}.json'
+
+    if not os.path.exists(destination_dir):
+        os.makedirs(destination_dir)
+
+    with open(destination_file, 'w') as file:
+        json.dump(conversation_history, file, indent=4)
+
+    return f"Successfully copied to {destination_file}"
+
+@app.callback(
+    Output('upload-status', 'children'),
+    [Input('upload-folder', 'contents')],
+    [State('upload-folder', 'filename'),
+     State('include-upload-folder', 'value')]
+)
+def handle_upload(contents, filename, include_upload):
+    if contents is None or include_upload != "yes":
+        return " "
+
+    content_type, content_string = contents.split(',')
+    decoded = base64.b64decode(content_string)
+
+    current_dir_path = os.path.abspath(".")
+    upload_directory = os.path.join(current_dir_path, "uploaded_dir")
+    if not os.path.exists(upload_directory):
+        os.makedirs(upload_directory)
+
+    zip_path = os.path.join(upload_directory, filename)
+    with open(zip_path, "wb") as file:
+        file.write(decoded)
+
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(upload_directory)
+
+    return "Folder uploaded and extracted successfully!"
+
+def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
+    global total_api_time
+    start_time = time.time()  # Record the start time
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
     )
+    end_time = time.time()  # Record the end time
+    api_call_time = end_time - start_time
+    total_api_time += api_call_time
+    return response
+
+def save_conversation_history_to_file(conversation_history, dir_name='conversation_history'):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    file_name = f"{dir_name}/conversation_history.json"
+    json_string = json.dumps(conversation_history, indent=4)
+    with open(file_name, 'w') as file:
+        file.write(json_string)
+
+
+@app.callback(
+    Output('push-status', 'children'),
+    Input('git-commit-push', 'n_clicks'),
+    State('commit-message', 'value'),
+    prevent_initial_call=True
+)
+def commit_and_push(n_clicks, commit_message):
+    if n_clicks is not None:
+        current_directory_1 = os.getcwd()
+        try:
+            success, message = git_commit_push(commit_message)
+            os.chdir(current_directory_1)
+            return message
+        except Exception as e:
+            os.chdir(current_directory_1)
+            return f"An error occurred: {e}"
+
 
 # -------------------- Utility Functions --------------------
-def set_prompt(aadl_content, counter_example_content):
-    """Generates the initial prompt with AADL model and counterexample content."""
-    if INSPECTA_Dog_cmd_util.get_args().counter_example is None:
-        # If the counterexample content is empty, provide a warning in the prompt
-        prompt = f"""
-        For the following AADL model:
-        {aadl_content}
+def read_requirements_file(file_path):
+    """
+    Reads the contents of the requirements.txt file.
 
-        Warning: No counterexample was generated or provided by AGREE.
-        There is no cex to explain any further.
-        Would you like me to assist with something else?
-        """
+    Args:
+        file_path (str): Path to the requirements.txt file.
+
+    Returns:
+        str: Contents of the requirements.txt file.
+    """
+    if not os.path.isfile(file_path):
+        warnings.warn(
+            f"The requirements file was not found at {file_path}. Proceeding without requirements.",
+            UserWarning
+        )
+        return ""
+    result = read_generic_file_content(file_path)
+    return result
+
+
+def get_requirements_content():
+    """
+    Reads the contents of the requirements.txt file if provided.
+
+    Returns:
+        str: Contents of the requirements.txt file or a single space if not provided.
+    """
+    args = INSPECTA_Dog_cmd_util.get_args()
+
+    # Default to a single space if no requirements file is specified
+    requirements_content = " "
+
+    requirements_file_path = getattr(args, 'requirements_file', None)
+
+    if requirements_file_path:
+        if os.path.isfile(requirements_file_path):
+            try:
+                requirements_content = read_requirements_file(requirements_file_path)
+            except Exception as e:
+                warnings.warn(
+                    f"Error reading requirements file at '{requirements_file_path}': {e}. Proceeding without requirements.",
+                    UserWarning
+                )
+        else:
+            warnings.warn(
+                f"The requirements file was not found at '{requirements_file_path}'. Proceeding without requirements.",
+                UserWarning
+            )
     else:
-        prompt = f"""
-        Consider the following AADL model:
-        {aadl_content}
+        # Optionally, you can log that no requirements file was provided
+        requirements_content = " No req file provided" # No additional context was provided
 
-        AGREE generated a counterexample:
-        {counter_example_content}
+    return requirements_content
 
-        Can you explain why and how to fix it?
-        Write the modified AADL code between ``` ```
-        """
+
+def construct_requirements_section(requirements_file_cont):
+    """
+    Constructs the requirements section to be appended to the prompt.
+
+    Args:
+        requirements_content (str): Content of the requirements.txt file.
+
+    Returns:
+        str: Formatted requirements section or an empty string if no requirements.
+    """
+    if requirements_file_content:
+        print(requirements_content)
+
+        return f"When you modify the code or try to write the fixed code consider the following \
+                    requirements and make sure your modifications don't break them:\n{requirements_file_content}"
+    return ""
+
+
+def construct_prompt(aadl_content, counter_example_content, requirements_section):
+    """
+    Constructs the final prompt based on the presence of counterexample content.
+
+    Args:
+        aadl_content (str): Content of the AADL model.
+        counter_example_content (str): Content of the counterexample.
+        requirements_section (str): Formatted requirements section.
+
+    Returns:
+        str: The constructed prompt.
+    """
+    args = INSPECTA_Dog_cmd_util.get_args()
+
+    if args.counter_example is None:
+        # If the counterexample content is empty, provide a warning in the prompt
+        return f"""
+For the following AADL model:
+{aadl_content}
+
+Warning: No counterexample was generated or provided by AGREE.
+There is no cex to explain any further.
+Would you like me to assist with something else?
+"""
+    else:
+        return f"""
+{requirements_section}
+\n        
+Consider the following AADL model:
+{aadl_content}
+
+AGREE generated a counterexample:
+{counter_example_content}
+
+Can you explain why and how to fix it?
+Write the modified AADL code between ``` ```
+"""
+
+
+def set_prompt(aadl_content, counter_example_content):
+    """
+    Generates the initial prompt with AADL model, counterexample content,
+    and requirements from requirements.txt.
+
+    Args:
+        aadl_content (str): Content of the AADL model.
+        counter_example_content (str): Content of the counterexample.
+
+    Returns:
+        str: The constructed prompt.
+    """
+    requirements_content = get_requirements_content()
+    requirements_section = construct_requirements_section(requirements_content)
+    prompt = construct_prompt(aadl_content, counter_example_content, requirements_section)
     return prompt
-
 
 def remove_file_ext_from_cmd_like_ui(initial_file):
     if INSPECTA_Dog_cmd_util.get_args().start_file is not None:
@@ -581,14 +878,14 @@ def read_project_files(directory):
     if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
         agree_files = os.path.join(directory, "_AgreeFiles")
         if not os.path.exists(agree_files):
-            create_agree_files_file(directory)
+            INSPECTA_Dog_cmd_util.create_agree_files_file(directory)
             agree_files = os.path.join(directory, "_AgreeFiles")
     else:
         agree_files = os.path.join(directory, "packages/_AgreeFiles")
         if not os.path.exists(agree_files):
             directory = os.path.join(directory, "packages")
             INSPECTA_Dog_cmd_util.create_agree_files_file(directory)
-            agree_files = os.path.join(directory, "/_AgreeFiles")
+            agree_files = os.path.join(directory, "_AgreeFiles")
 
     if not os.path.exists(agree_files):
         warnings.warn(
@@ -679,7 +976,6 @@ def highlight_keywords(text):
             break
     return elements
 
-
 # -------------------- FIXED: format_display_text last response keywords--------------------
 def format_display_text(conversation_history, display_mode):
     if display_mode == "full":
@@ -705,9 +1001,9 @@ def format_display_text(conversation_history, display_mode):
         last_message = conversation_history[-1]
         if last_message['role'] == 'system':
             # If for some reason the last message is system,
-            # you'd want to handle that or just skip it.
+            # we'd want to handle that or just skip it.
             # One approach: skip to the last non-system message.
-            # For simplicity, let's just return an empty list or a note:
+            # For simplicity, we just return an empty list or a note:
             return [html.Span("(No user/assistant message yet.)", style={'color': 'gray'})]
 
         if last_message['role'] == 'user':
@@ -717,104 +1013,6 @@ def format_display_text(conversation_history, display_mode):
 
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
-# ----------------------------------------------------------
-
-@app.callback(
-    Output('copy-status', 'children'),
-    Input('copy-button', 'n_clicks'),
-    State('conversation-history', 'children'),
-    prevent_initial_call=True
-)
-def copy_conversation_history(n_clicks, conversation_history_json):
-    global total_api_time
-    if n_clicks is None:
-        return "Click the button to copy the conversation history."
-
-    total_time_display = f"Total API Call Time: {total_api_time:.2f} seconds"
-    conversation_history = json.loads(conversation_history_json)
-    conversation_history.append({'role': 'system', 'content': total_time_display})
-
-    source_file = 'conversation_history/conversation_history.json'
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    destination_dir = 'temp_history'
-    destination_file = f'{destination_dir}/conversation_history_{timestamp}.json'
-
-    if not os.path.exists(destination_dir):
-        os.makedirs(destination_dir)
-
-    with open(destination_file, 'w') as file:
-        json.dump(conversation_history, file, indent=4)
-
-    return f"Successfully copied to {destination_file}"
-
-
-@app.callback(
-    Output('upload-status', 'children'),
-    [Input('upload-folder', 'contents')],
-    [State('upload-folder', 'filename'),
-     State('include-upload-folder', 'value')]
-)
-def handle_upload(contents, filename, include_upload):
-    if contents is None or include_upload != "yes":
-        return " "
-
-    content_type, content_string = contents.split(',')
-    decoded = base64.b64decode(content_string)
-
-    current_dir_path = os.path.abspath(".")
-    upload_directory = os.path.join(current_dir_path, "uploaded_dir")
-    if not os.path.exists(upload_directory):
-        os.makedirs(upload_directory)
-
-    zip_path = os.path.join(upload_directory, filename)
-    with open(zip_path, "wb") as file:
-        file.write(decoded)
-
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(upload_directory)
-
-    return "Folder uploaded and extracted successfully!"
-
-
-def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
-    global total_api_time
-    start_time = time.time()  # Record the start time
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-    )
-    end_time = time.time()  # Record the end time
-    api_call_time = end_time - start_time
-    total_api_time += api_call_time
-    return response
-
-
-def save_conversation_history_to_file(conversation_history, dir_name='conversation_history'):
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    file_name = f"{dir_name}/conversation_history.json"
-    json_string = json.dumps(conversation_history, indent=4)
-    with open(file_name, 'w') as file:
-        file.write(json_string)
-
-
-@app.callback(
-    Output('push-status', 'children'),
-    Input('git-commit-push', 'n_clicks'),
-    State('commit-message', 'value'),
-    prevent_initial_call=True
-)
-def commit_and_push(n_clicks, commit_message):
-    if n_clicks is not None:
-        current_directory_1 = os.getcwd()
-        try:
-            success, message = git_commit_push(commit_message)
-            os.chdir(current_directory_1)
-            return message
-        except Exception as e:
-            os.chdir(current_directory_1)
-            return f"An error occurred: {e}"
 
 
 # -------------------- Main --------------------
