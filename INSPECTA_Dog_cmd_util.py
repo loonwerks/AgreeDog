@@ -1,7 +1,7 @@
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTADog basic cmd line utilities.
-Date: July 2024
+Date: 1st July 2024
 """
 import os
 import sys
@@ -39,6 +39,13 @@ def get_args():
         required=False,
         default="Car.aadl",
         help="Name of the specific AADL file to search for in the working directory (optional)."
+    )
+    parser.add_argument(
+        "--requirement-file",
+        type=str,
+        required=False,
+        default=None,
+        help="Path to the natural language description file to AADL system design requirements."
     )
     return parser.parse_args()
 
