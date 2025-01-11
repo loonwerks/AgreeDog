@@ -1,7 +1,7 @@
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: Git actions have been upgraded to use the GitHub CLI and GitHub tokens more securely.
-Date: Aug 2024
+Date: 1st Aug 2024
 """
 import os
 import subprocess
@@ -33,13 +33,14 @@ def copy_temp_to_shared():
     shared_history = 'shared_history'
 
     if not os.path.exists(temp_history):
-        raise ValueError(f"The '{temp_history}' folder is missing.")
+        os.makedirs(temp_history)
+        #raise ValueError(f"The '{temp_history}' folder is missing.")
 
     if not os.path.exists(shared_history):
         os.makedirs(shared_history)
 
     try:
-        # Copy contents from temp-history to shared-history
+        # Copy contents from temp_history to shared_history
         for item in os.listdir(temp_history):
             s = os.path.join(temp_history, item)
             d = os.path.join(shared_history, item)
@@ -59,9 +60,9 @@ def add_commit_push(commit_message):
         subprocess.run(['git', 'push'], check=True)
         return True, "Changes have been pushed to the remote repository successfully."
     except subprocess.CalledProcessError as e:
-        return False, f"Error pushing to the repository: {e}"
+        return False, f"Error pushing to the repository: {e} check .gitignore"
 
-def limit_commit_message_length(commit_message, word_limit=50):
+def limit_commit_message_length(commit_message, word_limit=100):
     words = commit_message.split()
     if len(words) > word_limit:
         commit_message = ' '.join(words[:word_limit])
@@ -82,7 +83,7 @@ def git_commit_push(commit_message):
         copy_temp_to_shared()
 
         # Add, commit, and push changes
-        default_commit_message = "Update shared_history with latest temp_history"
+        default_commit_message = "Update shared history"
         if not commit_message.strip():
             commit_message = default_commit_message
         else:

@@ -6,8 +6,6 @@ Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
 Date: 1st July 2024
 """
 import os
-from http.cookiejar import user_domain_match
-from importlib.metadata import requires
 
 import dash
 from dash import dcc, html
