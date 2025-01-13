@@ -1,5 +1,5 @@
 # import pydevd_pycharm
-# pydevd_pycharm.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True,suspend=False)
+# pydevd_pycharm.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True, suspend=False)
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
@@ -19,7 +19,7 @@ import base64
 import json
 import warnings
 import time
-import threading  # Import threading
+import threading
 from flask import request  # Import Flask's request
 
 # Utility imports
@@ -33,7 +33,7 @@ directories = ["conversation_history", "temp_history", "shared_history", "counte
 INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
 
 # Parse command-line arguments
-args = INSPECTA_Dog_cmd_util.get_args()  # If --help is passed, argparse prints help and exits here.
+args = INSPECTA_Dog_cmd_util.get_args()
 
 # After loading environment variables, modify how openai.api_key is set:
 if args.user_open_api_key:
@@ -42,13 +42,11 @@ else:
     load_dotenv(find_dotenv())
     openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# -------------------- Process requirement.txt File --------------------
-# Initialize a variable to hold requirement contents
+# -------------------- Process sys-requirement.txt File --------------------
 requirements_content = ""
 
-
 def req_content():
-    global f, requirements_content, e
+    global requirements_content
     if args.requirement_file:
         requirement_path = args.requirement_file
         if os.path.isfile(requirement_path):
@@ -60,7 +58,6 @@ def req_content():
                 print(requirements_content)
                 content = requirements_content
                 return content
-                # test
             except Exception as e:
                 print(f"Error reading requirement file: {e}")
         else:
@@ -70,6 +67,7 @@ def req_content():
 
 req_content()
 requirements_file_content = req_content()
+
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -79,7 +77,6 @@ timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
 gear_button = dbc.Button(
     [
-        # Using Font Awesome gear icon
         html.I(className="fa fa-cog", style={"margin-right": "5px"}),
         "Settings"
     ],
@@ -100,7 +97,6 @@ shutdown_button = dbc.Button(
     style={"display": "inline-block", "vertical-align": "middle"}
 )
 
-# -------------------- Layout with Shutdown Features --------------------
 app.layout = dbc.Container([
     # Footer
     html.Footer([
@@ -116,7 +112,7 @@ app.layout = dbc.Container([
         "margin-bottom": "20px"
     }),
 
-    # Header with logo, title, gear button, and shutdown button
+    # Header with logo, title, gear button
     html.Div([
         html.Img(
             src="assets/coqdog-5.png",
@@ -135,8 +131,7 @@ app.layout = dbc.Container([
                 "margin-left": "20px"
             }
         ),
-        gear_button,
-        shutdown_button  # Add the shutdown button here
+        gear_button
     ], style={"display": "flex", "align-items": "center", "margin-bottom": "20px"}),
 
     # -------------------- Settings Menu --------------------
@@ -202,6 +197,8 @@ app.layout = dbc.Container([
                 inline=True,
                 style={"margin-top": "10px"}
             ),
+            html.Hr(),
+            shutdown_button
         ]
     ),
 
@@ -230,7 +227,6 @@ app.layout = dbc.Container([
     html.Div([
         dbc.Button("Submit", id='submit-button', color="primary", className="mr-1"),
         dbc.Button("Save", id='copy-button', color="secondary", className="mr-1"),
-        # The Upload Folder button, toggled by callback
         html.Div(
             id='upload-folder-div',
             style={"display": "none"},
@@ -304,19 +300,13 @@ formatted_elapsed_time = "00:00:00.00"
     prevent_initial_call=True
 )
 def toggle_system_message_menu(gear_clicks, style):
-    """
-    When the gear button is clicked, toggle the display
-    of the system message menu (show/hide).
-    """
     if not gear_clicks:
-        return style  # If button was never clicked, do nothing
-
+        return style
     if style["display"] == "none":
         style["display"] = "block"
     else:
         style["display"] = "none"
     return style
-
 
 # 2) Conditionally show/hide the "Upload Folder" button
 @app.callback(
@@ -325,10 +315,6 @@ def toggle_system_message_menu(gear_clicks, style):
     prevent_initial_call=True
 )
 def toggle_upload_folder_div(include_upload):
-    """
-    Shows the Upload Folder button if the user selected "Load additional context"
-    in the Settings menu.
-    """
     if include_upload == "yes":
         return {"display": "block", "margin-left": "10px"}
     return {"display": "none"}
@@ -340,15 +326,11 @@ def toggle_upload_folder_div(include_upload):
     prevent_initial_call=True
 )
 def toggle_initial_file_div(include_upload):
-    """
-    Shows the "Enter the start file" field if the user selected
-    "Load additional context" in the Settings menu.
-    """
     if include_upload == "yes":
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
-
+# -------------------- MODIFIED CALLBACK to always return a 6-tuple --------------------
 @app.callback(
     [
         Output('conversation-history', 'children'),
@@ -385,16 +367,10 @@ def handle_app_interactions(confirm_n_clicks,
                             initial_file,
                             include_requirements_chain,
                             include_upload_folder):
-    """
-    Handles both the selection/confirmation of the system message
-    (when Confirm Selection is clicked)
-    and the submission of user input.
-    """
     global start_time, elapsed_time, formatted_elapsed_time, time_frames, total_api_time
     time_frames.append(elapsed_time)
     reset_timer_variables()
 
-    # Determine which button was clicked
     ctx = dash.callback_context
     if not ctx.triggered:
         triggered_id = 'No clicks yet'
@@ -403,18 +379,20 @@ def handle_app_interactions(confirm_n_clicks,
 
     conversation_history = json.loads(conversation_history_json)
 
-    # 2A) System Message Confirmation
+    # A) System Message Confirmation
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
-        print(f"Confirm button clicked, selected message: {system_message_choice}")
-        ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
+        ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(
+            conversation_history, system_message_choice
+        )
         return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
-    # 2B) User Input Submission
+    # B) User Input Submission
     elif triggered_id == 'submit-button' and submit_n_clicks is not None:
         if start_time is None:
             start_time = datetime.now()
 
         if submit_n_clicks is None:
+            # Still must return 6 items
             return (
                 conversation_history_json,
                 "Enter your context and press 'Submit'.",
@@ -427,16 +405,14 @@ def handle_app_interactions(confirm_n_clicks,
         # Initialize conversation if empty
         if not conversation_history:
             conversation_history = [
-                {
-                    'role': 'system',
-                    'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg
-                }
+                {'role': 'system', 'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}
             ]
             context_added = "false"
 
         upload_directory = get_resource_path("uploaded_dir")
         subdirectories = [
-            os.path.join(upload_directory, d) for d in os.listdir(upload_directory)
+            os.path.join(upload_directory, d)
+            for d in os.listdir(upload_directory)
             if os.path.isdir(os.path.join(upload_directory, d))
         ]
         if include_upload_folder == "yes" and not subdirectories:
@@ -503,14 +479,17 @@ def handle_app_interactions(confirm_n_clicks,
                 and initial_file
                 and include_upload_folder == "yes"
             ):
-                # If the user chooses to upload and not use requirements chain,
-                # we do not re-add context from cmd line. user_input stays as-is.
+                # If the user chooses to upload and not use requirements chain, do nothing
                 pass
 
         # Integrate requirements_content if provided
         if requirements_file_content:
-            requirements_hint = f"When you modify the code or try to write the fixed code consider the following \
-            requirements and make sure your modifications don't break them:\n{requirements_file_content}"
+            requirements_hint = (
+                "When you modify the code or try to write the fixed code, "
+                "consider the following requirements and make sure your modifications "
+                "don't break them:\n"
+                + requirements_file_content
+            )
             user_input = f"\n{user_input}"
             print("Integrated requirements.txt content into user input.")
 
@@ -535,6 +514,16 @@ def handle_app_interactions(confirm_n_clicks,
             context_added
         )
 
+    # -------------------- DEFAULT RETURN FOR ANY OTHER PATH --------------------
+    return (
+        conversation_history_json,
+        "",               # e.g. no new message
+        user_input,       # leave user input as is
+        "Tokens used: 0", # placeholder
+        f"Elapsed Time: {formatted_elapsed_time}",
+        context_added
+    )
+
 # 4) Toggle the Shutdown Confirmation Modal
 @app.callback(
     Output("shutdown-modal", "is_open"),
@@ -547,7 +536,6 @@ def handle_app_interactions(confirm_n_clicks,
 )
 def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
     ctx = dash.callback_context
-
     if not ctx.triggered:
         return is_open
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -558,7 +546,7 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
         return False
     return is_open
 
-# 5) Shutdown Callback with Forceful Termination
+# 5) Forceful Shutdown with os._exit(0)
 @app.callback(
     Output('shutdown-status', 'children'),
     Input('confirm-shutdown', 'n_clicks'),
@@ -566,14 +554,9 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
 )
 def shutdown_server(n_clicks):
     if n_clicks:
-        def force_shutdown():
-            os._exit(0)  # Forcefully terminate the process
-
-        # Start the shutdown in a separate thread for immediate effect
-        thread = threading.Thread(target=force_shutdown)
-        thread.start()
-
-        return "Server is shutting down immediately..."
+        # Immediately kill the Python process with exit code 0
+        os._exit(0)
+        return "Server is shutting down..."  # Not actually reached
     return ""
 
 @app.callback(
@@ -633,14 +616,14 @@ def handle_upload(contents, filename, include_upload):
 
 def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
     global total_api_time
-    start_time = time.time()  # Record the start time
+    start_time_local = time.time()
     response = openai.ChatCompletion.create(
         model=model,
         messages=messages,
         temperature=temperature,
     )
-    end_time = time.time()  # Record the end time
-    api_call_time = end_time - start_time
+    end_time_local = time.time()
+    api_call_time = end_time_local - start_time_local
     total_api_time += api_call_time
     return response
 
@@ -651,7 +634,6 @@ def save_conversation_history_to_file(conversation_history, dir_name='conversati
     json_string = json.dumps(conversation_history, indent=4)
     with open(file_name, 'w') as file:
         file.write(json_string)
-
 
 @app.callback(
     Output('push-status', 'children'),
@@ -670,18 +652,8 @@ def commit_and_push(n_clicks, commit_message):
             os.chdir(current_directory_1)
             return f"An error occurred: {e}"
 
-
 # -------------------- Utility Functions --------------------
 def read_requirements_file(file_path):
-    """
-    Reads the contents of the requirements.txt file.
-
-    Args:
-        file_path (str): Path to the requirements.txt file.
-
-    Returns:
-        str: Contents of the requirements.txt file.
-    """
     if not os.path.isfile(file_path):
         warnings.warn(
             f"The requirements file was not found at {file_path}. Proceeding without requirements.",
@@ -691,76 +663,44 @@ def read_requirements_file(file_path):
     result = read_generic_file_content(file_path)
     return result
 
-
 def get_requirements_content():
-    """
-    Reads the contents of the requirements.txt file if provided.
-
-    Returns:
-        str: Contents of the requirements.txt file or a single space if not provided.
-    """
-    args = INSPECTA_Dog_cmd_util.get_args()
-
-    # Default to a single space if no requirements file is specified
-    requirements_content = " "
-
-    requirements_file_path = getattr(args, 'requirements_file', None)
+    args_local = INSPECTA_Dog_cmd_util.get_args()
+    requirements_content_local = " "
+    requirements_file_path = getattr(args_local, 'requirements_file', None)
 
     if requirements_file_path:
         if os.path.isfile(requirements_file_path):
             try:
-                requirements_content = read_requirements_file(requirements_file_path)
+                requirements_content_local = read_requirements_file(requirements_file_path)
             except Exception as e:
                 warnings.warn(
-                    f"Error reading requirements file at '{requirements_file_path}': {e}. Proceeding without requirements.",
+                    f"Error reading requirements file at '{requirements_file_path}': {e}. "
+                    f"Proceeding without requirements.",
                     UserWarning
                 )
         else:
             warnings.warn(
-                f"The requirements file was not found at '{requirements_file_path}'. Proceeding without requirements.",
+                f"The requirements file was not found at '{requirements_file_path}'. "
+                f"Proceeding without requirements.",
                 UserWarning
             )
     else:
-        # Optionally, you can log that no requirements file was provided
-        requirements_content = " No req file provided" # No additional context was provided
+        requirements_content_local = " No req file provided"
 
-    return requirements_content
-
+    return requirements_content_local
 
 def construct_requirements_section(requirements_file_cont):
-    """
-    Constructs the requirements section to be appended to the prompt.
-
-    Args:
-        requirements_content (str): Content of the requirements.txt file.
-
-    Returns:
-        str: Formatted requirements section or an empty string if no requirements.
-    """
-    if requirements_file_content:
-        print(requirements_content)
-
-        return f"When you modify the code or try to write the fixed code consider the following \
-                    requirements and make sure your modifications don't break them:\n{requirements_file_content}"
+    if requirements_file_cont:
+        return (
+            "When you modify the code or try to write the fixed code consider "
+            "the following requirements and make sure your modifications don't break them:\n"
+            + requirements_file_cont
+        )
     return ""
 
-
 def construct_prompt(aadl_content, counter_example_content, requirements_section):
-    """
-    Constructs the final prompt based on the presence of counterexample content and the requirements files.
-
-    Args:
-        aadl_content (str): Content of the AADL model.
-        counter_example_content (str): Content of the counterexample.
-        requirements_section (str): Formatted requirements section.
-
-    Returns:
-        str: The constructed prompt.
-    """
-    args = INSPECTA_Dog_cmd_util.get_args()
-
-    if args.counter_example is None:
-        # If the counterexample content is empty, provide a warning in the prompt
+    args_local = INSPECTA_Dog_cmd_util.get_args()
+    if args_local.counter_example is None:
         return f"""
 For the following AADL model:
 {aadl_content}
@@ -772,7 +712,7 @@ Would you like me to assist with something else?
     else:
         return f"""
 {requirements_section}
-\n        
+
 Consider the following AADL model:
 {aadl_content}
 
@@ -783,48 +723,35 @@ Can you explain why and how to fix it?
 Write the modified AADL code between ``` ```
 """
 
-
 def set_prompt(aadl_content, counter_example_content):
-    """
-    Generates the initial prompt with AADL model, counterexample content,
-    and requirements from requirements.txt.
-
-    Args:
-        aadl_content (str): Content of the AADL model.
-        counter_example_content (str): Content of the counterexample.
-
-    Returns:
-        str: The constructed prompt.
-    """
-    requirements_content = get_requirements_content()
-    requirements_section = construct_requirements_section(requirements_content)
-    prompt = construct_prompt(aadl_content, counter_example_content, requirements_section)
-    return prompt
+    requirements_content_local = get_requirements_content()
+    requirements_section = construct_requirements_section(requirements_content_local)
+    return construct_prompt(aadl_content, counter_example_content, requirements_section)
 
 def remove_file_ext_from_cmd_like_ui(initial_file):
     if INSPECTA_Dog_cmd_util.get_args().start_file is not None:
-        initial_file = INSPECTA_Dog_cmd_util.get_args().start_file
-        initial_file_without_ext = initial_file[:-5]
+        initial_file_cmd = INSPECTA_Dog_cmd_util.get_args().start_file
+        initial_file_without_ext = initial_file_cmd[:-5]
         return initial_file_without_ext
     else:
         return initial_file
 
-
 def token_warning(model_choice, tokens_used):
     warning = ""
     if 7000 <= tokens_used < 8000 and model_choice == "gpt-4-0613":
-        warning = " Warning: Tokens used are higher than 7000. If you are using GPT-4 8k, consider switching to GPT-3.5 16K."
+        warning = " Warning: Tokens used are higher than 7000. If you are using GPT-4 8k, consider switching."
     return warning
 
-
-def total_timedisplay(start_time, time_frames, total_api_time):
+def total_timedisplay(start_time_val, time_frames_local, total_api_time_val):
     global elapsed_time, formatted_elapsed_time
-    elapsed_time = datetime.now() - start_time
-    time_frames.append(elapsed_time)
+    elapsed_time = datetime.now() - start_time_val
+    time_frames_local.append(elapsed_time)
     formatted_elapsed_time = str(elapsed_time)[:10]
-    total_time_display = f"Elapsed Time: {formatted_elapsed_time}, Total API Call Time: {total_api_time:.2f} seconds"
+    total_time_display = (
+        f"Elapsed Time: {formatted_elapsed_time}, "
+        f"Total API Call Time: {total_api_time_val:.2f} seconds"
+    )
     return total_time_display
-
 
 def set_system_message(conversation_history, system_message_choice):
     if not conversation_history:
@@ -835,13 +762,11 @@ def set_system_message(conversation_history, system_message_choice):
         conversation_history[0]['content'] = INSPECTA_dog_system_msgs.AGREE_dog_sys_msg
     return json.dumps(conversation_history), "", "", "", ""
 
-
 def reset_timer_variables():
     global start_time, elapsed_time, formatted_elapsed_time
     start_time = None
     elapsed_time = timedelta(0)
     formatted_elapsed_time = "00:00:00.00"
-
 
 def read_start_file_content(file_path):
     try:
@@ -852,11 +777,9 @@ def read_start_file_content(file_path):
         print(f"File not found: {file_path}")
         return ""
 
-
 def read_generic_file_content(file_path):
     with open(file_path, 'r') as f:
         return f.read()
-
 
 def handle_requires(file_path, project_files, files_to_check, processed_files):
     with open(file_path, 'r') as f:
@@ -866,11 +789,12 @@ def handle_requires(file_path, project_files, files_to_check, processed_files):
                 required_packages_line = line[4:].strip().rstrip(';')
                 required_packages = [pkg.strip() for pkg in required_packages_line.split(',')]
                 for required_pkg in required_packages:
-                    if (required_pkg in project_files and
-                            required_pkg not in processed_files and
-                            required_pkg not in files_to_check):
+                    if (
+                        required_pkg in project_files
+                        and required_pkg not in processed_files
+                        and required_pkg not in files_to_check
+                    ):
                         files_to_check.append(required_pkg)
-
 
 def read_project_files(directory):
     if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
@@ -898,9 +822,8 @@ def read_project_files(directory):
         for line in file:
             filename = line.strip()
             if filename.endswith(".aadl"):
-                project_files.append(filename[:-5])  # Remove '.aadl' extension
+                project_files.append(filename[:-5])
     return project_files
-
 
 def concatenate_imports(start_file, project_files, folder_path,
                         include_requirements_chain, include_upload_folder,
@@ -915,11 +838,19 @@ def concatenate_imports(start_file, project_files, folder_path,
             continue
         processed_files.add(current_file)
 
-        if (include_requirements_chain == "yes" and start_file
-                and context_added == "false" and include_upload_folder == "no"):
+        if (
+            include_requirements_chain == "yes"
+            and start_file
+            and context_added == "false"
+            and include_upload_folder == "no"
+        ):
             file_path = os.path.join(folder_path, current_file + ".aadl")
-        elif (include_requirements_chain == "yes" and start_file
-              and context_added == "true" and include_upload_folder == "yes"):
+        elif (
+            include_requirements_chain == "yes"
+            and start_file
+            and context_added == "true"
+            and include_upload_folder == "yes"
+        ):
             file_path = os.path.join(folder_path, "packages", current_file + ".aadl")
         else:
             file_path = os.path.join(folder_path, current_file + ".aadl")
@@ -936,7 +867,6 @@ def concatenate_imports(start_file, project_files, folder_path,
 
         handle_requires(file_path, project_files, files_to_check, processed_files)
     return context
-
 
 def highlight_keywords(text):
     keywords = [
@@ -974,15 +904,12 @@ def highlight_keywords(text):
             break
     return elements
 
-# -------------------- FIXED: format_display_text last response keywords--------------------
 def format_display_text(conversation_history, display_mode):
     if display_mode == "full":
         display_elements = []
         for message in conversation_history:
-            # Skip system messages
             if message['role'] == 'system':
                 continue
-
             if message['role'] == 'user':
                 label = html.Span("User:", style={'color': 'blue'})
             else:
@@ -993,30 +920,22 @@ def format_display_text(conversation_history, display_mode):
                 highlight_keywords(" " + message['content'] + "\n\n")
             )
         return display_elements
-
     else:  # "last" mode
-        # We still show the last message, whether user or assistant
         last_message = conversation_history[-1]
         if last_message['role'] == 'system':
-            # If for some reason the last message is system,
-            # we'd want to handle that or just skip it.
-            # One approach: skip to the last non-system message.
-            # For simplicity, we just return an empty list or a note:
             return [html.Span("(No user/assistant message yet.)", style={'color': 'gray'})]
-
         if last_message['role'] == 'user':
             label = html.Span("User:", style={'color': 'blue'})
         else:
             label = html.Span("AGREE-Dog:", style={'color': 'red'})
-
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
-
 
 # -------------------- Main --------------------
 if __name__ == '__main__':
     print("Starting the Dash server...")
     try:
+        # The server will run normally until the user clicks the Shutdown button.
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         print("Shutting down the server gracefully.")
