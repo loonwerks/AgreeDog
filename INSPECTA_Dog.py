@@ -78,8 +78,8 @@ timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
 gear_button = dbc.Button(
     [
-        html.I(className="fa fa-cog", style={"margin-right": "5px"}),
-        "Settings"
+        html.I(className="fa fa-cog", style={"margin-right": "5px"}) #,
+        #"" # removed Setting
     ],
     id="gear-button",
     color="secondary",
@@ -108,6 +108,7 @@ app.layout = dbc.Container([
         ])
     ], style={
         "text-align": "center",
+        "width": "100%",
         "background-color": "#f1f1f1",
         "padding": "10px",
         "margin-bottom": "20px"
@@ -122,7 +123,7 @@ app.layout = dbc.Container([
                 id="app-logo",
                 style={
                     "display": "inline-block",
-                    "height": "50px",
+                    "height": "70px",
                     "vertical-align": "middle"
                 }
             ),
@@ -141,15 +142,15 @@ app.layout = dbc.Container([
         }),
 
         # Row 2: Gear button underneath
-        html.Div(
-            gear_button,
-            style={
-                "margin-top": "10px"  # space between the row above
-            }
-        )
+       # html.Div(
+       #     gear_button,
+       #     style={
+       #         "margin-top": "10px"  # space between the row above
+       #     }
+       # )
     ],
     style={
-        "margin-bottom": "20px"
+        "margin-bottom": "5px"
     }),
 
     # -------------------- Settings Menu --------------------
@@ -264,6 +265,8 @@ app.layout = dbc.Container([
 
     # -- Buttons row: Submit, Save, Upload Folder (with FA icons) --
     html.Div([
+        # Gear button icon placed here
+        #gear_button,
         # Submit with icon
         dbc.Button(
             [
@@ -285,7 +288,7 @@ app.layout = dbc.Container([
             color="secondary",
             style={"margin-right": "2px"}
         ),
-
+        gear_button, # moved setting here
         # The Upload Folder button, toggled by callback
         html.Div(
             id='upload-folder-div',
