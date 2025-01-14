@@ -78,12 +78,10 @@ timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
 gear_button = dbc.Button(
     [
-        html.I(className="fa fa-cog", style={"margin-right": "5px"}) #,
-        #"" # removed Setting
+        html.I(className="fa fa-cog", style={"margin-right": "5px"})
     ],
     id="gear-button",
     color="secondary",
-    className="ml-3",
     style={"display": "inline-block", "vertical-align": "middle"}
 )
 
@@ -99,74 +97,68 @@ shutdown_button = dbc.Button(
 )
 
 app.layout = dbc.Container([
-    # Footer
-    html.Footer([
-        html.P([
-            html.Span("", style={"font-size": "14px"}),
-            html.Span("©", style={"font-size": "14px"}),
-            " Collins Aerospace"
-        ])
-    ], style={
-        "text-align": "center",
-        "width": "100%",
-        "background-color": "#f1f1f1",
-        "padding": "10px",
-        "margin-bottom": "20px"
-    }),
+    # Example "Footer" or other elements here, if needed
 
-    # -------------------- Header with logo & title on the same line --------------------
+    # -------------------- Header with dog image & text on the left, Collins on the right --------------------
     html.Div([
-        # Row 1: Logo & Title horizontally
         html.Div([
+            # Sub-Div for dog icon + "AGREE-Dog" text on the left
+            html.Div([
+                html.Img(
+                    src="assets/coqdog-5.png",
+                    id="app-logo",
+                    style={
+                        "height": "70px",
+                        "vertical-align": "middle"
+                    }
+                ),
+                html.H1(
+                    "AGREE-Dog",
+                    #style={
+                    #    "margin-left": "20px",
+                    #    "vertical-align": "middle"
+                    #}
+                    style={
+                        "font-family": "Arial, Helvetica",  # Modern sans-serif fonts
+                        "font-weight": "bold",  # Makes the text bold
+                        "font-size": "40px",  # Adjust the font size as needed
+                        "margin-left": "20px",  # Optional for alignment or spacing
+                        "vertical-align": "middle"
+                    }
+                )
+            ], style={
+                "display": "flex",
+                "align-items": "center"
+            }),
+
+            # The Collins logo on the right
             html.Img(
-                src="assets/coqdog-5.png",
-                id="app-logo",
+                src="assets/collins_logo.png",
+                id="collins-logo",
                 style={
-                    "display": "inline-block",
                     "height": "70px",
+                    "width": "250px",
                     "vertical-align": "middle"
                 }
-            ),
-            html.H1(
-                "AGREE-Dog",
-                style={
-                    "display": "inline-block",
-                    "vertical-align": "middle",
-                    "margin-left": "20px"
-                }
             )
-        ],
-        style={
+        ], style={
+            # Outer flex container to push left item to left, Collins to right
             "display": "flex",
-            "align-items": "center"
-        }),
-
-        # Row 2: Gear button underneath
-       # html.Div(
-       #     gear_button,
-       #     style={
-       #         "margin-top": "10px"  # space between the row above
-       #     }
-       # )
-    ],
-    style={
-        "margin-bottom": "5px"
-    }),
+            "align-items": "center",
+            "justify-content": "space-between",
+            "margin-bottom": "5px"
+        })
+    ]),
 
     # -------------------- Settings Menu --------------------
     html.Div(
         id='system-message-menu',
         style={"display": "none", "margin-bottom": "20px"},
         children=[
-            # 1) System Message choice
             dcc.RadioItems(
                 id='system-message-choice',
                 options=[
-                    {
-                        "label": "JKind SMTSolvers AI selector",
-                        "value": "Enable JKind SMTSolvers selector",
-                        "disabled": True
-                    },
+                    {"label": "JKind SMTSolvers AI selector", "value": "Enable JKind SMTSolvers selector", "disabled": True},
                     {"label": "AgreeDog System Message", "value": "AgreeDog"}
                 ],
                 value="AgreeDog"
@@ -182,7 +174,7 @@ app.layout = dbc.Container([
             ),
             html.Hr(),
 
-            # 2) Advanced items
+            # Additional radio items...
             dcc.RadioItems(
                 id='include-upload-folder',
                 options=[
@@ -225,7 +217,7 @@ app.layout = dbc.Container([
                 style={"margin-top": "10px"}
             ),
 
-            # --- New radio for enabling Git push ---
+            # Radio for enabling Git push
             dbc.RadioItems(
                 id='enable-git-push',
                 options=[
@@ -263,22 +255,16 @@ app.layout = dbc.Container([
         ]
     ),
 
-    # -- Buttons row: Submit, Save, Upload Folder (with FA icons) --
     html.Div([
-        # Gear button icon placed here
-        #gear_button,
-        # Submit with icon
         dbc.Button(
             [
                 html.I(className="fa fa-paper-plane", style={"margin-right": "2px"}),
-                "Submit" # Submit
+                "Submit"
             ],
             id='submit-button',
             color="primary",
             style={"margin-right": "2px"}
         ),
-
-        # Save with icon
         dbc.Button(
             [
                 html.I(className="fa fa-save", style={"margin-right": "2px"}),
@@ -288,8 +274,8 @@ app.layout = dbc.Container([
             color="secondary",
             style={"margin-right": "2px"}
         ),
-        gear_button, # moved setting here
-        # The Upload Folder button, toggled by callback
+        gear_button,
+
         html.Div(
             id='upload-folder-div',
             style={"display": "none", "margin-left": "2px"},
@@ -313,7 +299,7 @@ app.layout = dbc.Container([
     html.Div(id='copy-status', style={"margin-top": "10px"}),
     html.Div(id='response-output', style={"white-space": "pre-line", "margin-top": "20px"}),
 
-    # Hidden fields / placeholders
+    # Hidden placeholders
     html.Div(
         id='conversation-history',
         style={'display': 'none'},
@@ -328,10 +314,10 @@ app.layout = dbc.Container([
     token_display,
     timer_display,
 
-    # --- Wrap Git commit field & button in their own DIV, hidden by default
+    # Git commit field
     html.Div(
         id='git-commit-div',
-        style={"display": "none"},  # Will be toggled by callback
+        style={"display": "none"},
         children=[
             dbc.Input(
                 id='commit-message',
@@ -352,12 +338,10 @@ app.layout = dbc.Container([
         ]
     ),
 
-    # -------------------- Shutdown Confirmation Modal --------------------
     dbc.Modal([
         dbc.ModalHeader("Confirm Shutdown"),
         dbc.ModalBody("Are you sure you want to shut down the server? This action cannot be undone."),
         dbc.ModalFooter([
-            # Updated "Yes, Shutdown" button to have a check icon
             dbc.Button(
                 [
                     html.I(className="fa fa-check", style={"margin-right": "5px"}),
@@ -370,7 +354,6 @@ app.layout = dbc.Container([
         ])
     ], id="shutdown-modal", is_open=False),
 
-    # Shutdown status message
     html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
 
 ], fluid=True)
@@ -383,8 +366,6 @@ elapsed_time = timedelta(0)
 formatted_elapsed_time = "00:00:00.00"
 
 # -------------------- Callbacks --------------------
-
-# 1) Toggle the advanced menu (system-message-menu) with the GEAR button
 @app.callback(
     Output('system-message-menu', 'style'),
     Input('gear-button', 'n_clicks'),
@@ -400,7 +381,6 @@ def toggle_system_message_menu(gear_clicks, style):
         style["display"] = "none"
     return style
 
-# 2) Conditionally show/hide the "Upload Folder" button
 @app.callback(
     Output('upload-folder-div', 'style'),
     Input('include-upload-folder', 'value'),
@@ -411,7 +391,6 @@ def toggle_upload_folder_div(include_upload):
         return {"display": "block", "margin-left": "10px"}
     return {"display": "none"}
 
-# 3) Conditionally show/hide the "Enter the start file" input
 @app.callback(
     Output('initial-file-div', 'style'),
     Input('include-upload-folder', 'value'),
@@ -422,22 +401,16 @@ def toggle_initial_file_div(include_upload):
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
-# --- NEW callback: show/hide git commit div ---
 @app.callback(
     Output('git-commit-div', 'style'),
     Input('enable-git-push', 'value'),
     prevent_initial_call=True
 )
 def toggle_git_commit_div(enable_git_push):
-    """
-    Shows the 'commit-message' input & 'Git Commit and Push' button
-    only if 'enable-git-push' is set to 'yes'.
-    """
     if enable_git_push == "yes":
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
-# 4) Main callback: handle system message confirmation & user input submission
 @app.callback(
     [
         Output('conversation-history', 'children'),
@@ -486,12 +459,10 @@ def handle_app_interactions(confirm_n_clicks,
 
     conversation_history = json.loads(conversation_history_json)
 
-    # A) System Message Confirmation
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
         ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
         return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
-    # B) User Input Submission
     elif triggered_id == 'submit-button' and submit_n_clicks is not None:
         if start_time is None:
             start_time = datetime.now()
@@ -506,19 +477,16 @@ def handle_app_interactions(confirm_n_clicks,
                 context_added
             )
 
-        # Initialize conversation if empty
         if not conversation_history:
             conversation_history = [
-                {
-                    'role': 'system',
-                    'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg
-                }
+                {'role': 'system', 'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}
             ]
             context_added = "false"
 
         upload_directory = get_resource_path("uploaded_dir")
         subdirectories = [
-            os.path.join(upload_directory, d) for d in os.listdir(upload_directory)
+            os.path.join(upload_directory, d)
+            for d in os.listdir(upload_directory)
             if os.path.isdir(os.path.join(upload_directory, d))
         ]
         if include_upload_folder == "yes" and not subdirectories:
@@ -531,22 +499,19 @@ def handle_app_interactions(confirm_n_clicks,
                 context_added
             )
 
-        # If command line arguments are provided
         if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
             args_local = INSPECTA_Dog_cmd_util.get_args()
             target_directory = args_local.working_dir
             if args_local.start_file is not None:
                 initial_file = args_local.start_file
         else:
-            # Use uploaded directory if no cmd args
             target_directory = subdirectories[0] if subdirectories else ""
             print("Target directory:", target_directory)
 
         project_files = read_project_files(target_directory)
 
-        # Only add initial context if it's not already added
         if context_added == "false":
-            if include_requirements_chain == "yes" and initial_file and include_upload_folder == "no":
+            if (include_requirements_chain == "yes" and initial_file and include_upload_folder == "no"):
                 initial_file = remove_file_ext_from_cmd_like_ui(initial_file)
                 file_context = concatenate_imports(
                     initial_file,
@@ -563,13 +528,9 @@ def handle_app_interactions(confirm_n_clicks,
                     user_input = f"{prompt}\n{user_input}"
                 context_added = "true"
 
-            elif (
-                include_requirements_chain == "no"
-                and initial_file
-                and include_upload_folder == "no"
-                and context_added == "false"
-                and INSPECTA_Dog_cmd_util.get_args().counter_example is not None
-            ):
+            elif (include_requirements_chain == "no" and initial_file and
+                  include_upload_folder == "no" and context_added == "false" and
+                  INSPECTA_Dog_cmd_util.get_args().counter_example is not None):
                 cex_path = INSPECTA_Dog_cmd_util.get_args().counter_example
                 cex = read_counter_example_file(cex_path)
                 start_file_with_ext = INSPECTA_Dog_cmd_util.get_args().start_file
@@ -580,16 +541,9 @@ def handle_app_interactions(confirm_n_clicks,
                 user_input = f"{prompt}\n{user_input}"
                 context_added = "true"
 
-            elif (
-                include_requirements_chain == "no"
-                and initial_file
-                and include_upload_folder == "yes"
-            ):
-                # If the user chooses to upload and not use requirements chain,
-                # user_input stays as-is.
+            elif (include_requirements_chain == "no" and initial_file and include_upload_folder == "yes"):
                 pass
 
-        # Integrate requirements_content if provided
         if requirements_file_content:
             requirements_hint = (
                 "When you modify the code or try to write the fixed code, "
@@ -599,7 +553,6 @@ def handle_app_interactions(confirm_n_clicks,
             user_input = f"\n{user_input}"
             print("Integrated requirements.txt content into user input.")
 
-        # Append user input to conversation
         conversation_history.append({'role': 'user', 'content': user_input})
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
         response = response_obj.choices[0].message["content"]
@@ -620,7 +573,6 @@ def handle_app_interactions(confirm_n_clicks,
             context_added
         )
 
-    # Default return if no branch is triggered
     return (
         conversation_history_json,
         "",
@@ -630,7 +582,6 @@ def handle_app_interactions(confirm_n_clicks,
         context_added
     )
 
-# 5) Toggle the Shutdown Confirmation Modal
 @app.callback(
     Output("shutdown-modal", "is_open"),
     [
@@ -653,7 +604,6 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
         return False
     return is_open
 
-# 6) Forceful Shutdown with os._exit(0)
 @app.callback(
     Output('shutdown-status', 'children'),
     Input('confirm-shutdown', 'n_clicks'),
@@ -661,9 +611,11 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
 )
 def shutdown_server(n_clicks):
     if n_clicks:
-        # Immediately kill the Python process with exit code 0
-        os._exit(0)
-        return "Server is shutting down..."  # Not actually reached
+        def force_shutdown():
+            os._exit(0)
+        thread = threading.Thread(target=force_shutdown)
+        thread.start()
+        return "Server is shutting down immediately..."
     return ""
 
 @app.callback(
@@ -945,19 +897,11 @@ def concatenate_imports(start_file, project_files, folder_path,
             continue
         processed_files.add(current_file)
 
-        if (
-            include_requirements_chain == "yes"
-            and start_file
-            and context_added == "false"
-            and include_upload_folder == "no"
-        ):
+        if (include_requirements_chain == "yes" and start_file and
+            context_added == "false" and include_upload_folder == "no"):
             file_path = os.path.join(folder_path, current_file + ".aadl")
-        elif (
-            include_requirements_chain == "yes"
-            and start_file
-            and context_added == "true"
-            and include_upload_folder == "yes"
-        ):
+        elif (include_requirements_chain == "yes" and start_file and
+              context_added == "true" and include_upload_folder == "yes"):
             file_path = os.path.join(folder_path, "packages", current_file + ".aadl")
         else:
             file_path = os.path.join(folder_path, current_file + ".aadl")
@@ -1038,11 +982,9 @@ def format_display_text(conversation_history, display_mode):
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
 
-# -------------------- Main --------------------
 if __name__ == '__main__':
     print("Starting the Dash server...")
     try:
-        # The server will run normally until the user clicks the Shutdown button.
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         print("Shutting down the server gracefully.")
