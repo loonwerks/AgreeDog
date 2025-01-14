@@ -64,9 +64,10 @@ def req_content():
             print(f"Requirement file not found at: {requirement_path}")
     else:
         print("No requirement.txt file provided.")
+        return "No requirement.txt file provided."
 
 req_content()
-requirements_file_content = req_content()
+requirements_file_content = requirements_content
 
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -103,7 +104,7 @@ app.layout = dbc.Container([
         html.P([
             html.Span("", style={"font-size": "14px"}),
             html.Span("©", style={"font-size": "14px"}),
-            " Proof of Concept Web Service"
+            " Collins Aerospace"
         ])
     ], style={
         "text-align": "center",
@@ -222,6 +223,19 @@ app.layout = dbc.Container([
                 inline=True,
                 style={"margin-top": "10px"}
             ),
+
+            # --- New radio for enabling Git push ---
+            dbc.RadioItems(
+                id='enable-git-push',
+                options=[
+                    {"label": "Enable Git push", "value": "yes"},
+                    {"label": "Disable Git push", "value": "no"},
+                ],
+                value="no",
+                inline=True,
+                style={"margin-top": "10px"}
+            ),
+
             html.Hr(),
             shutdown_button
         ]
@@ -253,35 +267,35 @@ app.layout = dbc.Container([
         # Submit with icon
         dbc.Button(
             [
-                html.I(className="fa fa-paper-plane", style={"margin-right": "5px"}),
-                "Submit"
+                html.I(className="fa fa-paper-plane", style={"margin-right": "2px"}),
+                "Submit" # Submit
             ],
             id='submit-button',
             color="primary",
-            style={"margin-right": "10px"}
+            style={"margin-right": "2px"}
         ),
 
         # Save with icon
         dbc.Button(
             [
-                html.I(className="fa fa-save", style={"margin-right": "5px"}),
+                html.I(className="fa fa-save", style={"margin-right": "2px"}),
                 "Save"
             ],
             id='copy-button',
             color="secondary",
-            style={"margin-right": "10px"}
+            style={"margin-right": "2px"}
         ),
 
         # The Upload Folder button, toggled by callback
         html.Div(
             id='upload-folder-div',
-            style={"display": "none", "margin-left": "10px"},
+            style={"display": "none", "margin-left": "2px"},
             children=[
                 dcc.Upload(
                     id='upload-folder',
                     children=dbc.Button(
                         [
-                            html.I(className="fa fa-upload", style={"margin-right": "5px"}),
+                            html.I(className="fa fa-upload", style={"margin-right": "2px"}),
                             "Upload Folder"
                         ],
                         color="secondary"
@@ -311,14 +325,29 @@ app.layout = dbc.Container([
     token_display,
     timer_display,
 
-    dbc.Input(
-        id='commit-message',
-        placeholder='Enter commit message',
-        type='text',
-        style={"margin-top": "20px"}
+    # --- Wrap Git commit field & button in their own DIV, hidden by default
+    html.Div(
+        id='git-commit-div',
+        style={"display": "none"},  # Will be toggled by callback
+        children=[
+            dbc.Input(
+                id='commit-message',
+                placeholder='Enter commit message',
+                type='text',
+                style={"margin-top": "20px"}
+            ),
+            dbc.Button(
+                [
+                    html.I(className="fab fa-github", style={"margin-right": "5px"}),
+                    "Git Commit and Push"
+                ],
+                id='git-commit-push',
+                color="success",
+                className="mr-1"
+            ),
+            html.Div(id='push-status', style={"margin-top": "20px"}),
+        ]
     ),
-    dbc.Button("Git Commit and Push", id='git-commit-push', color="success", className="mr-1"),
-    html.Div(id='push-status', style={"margin-top": "20px"}),
 
     # -------------------- Shutdown Confirmation Modal --------------------
     dbc.Modal([
@@ -387,6 +416,21 @@ def toggle_upload_folder_div(include_upload):
 )
 def toggle_initial_file_div(include_upload):
     if include_upload == "yes":
+        return {"display": "block", "margin-top": "10px"}
+    return {"display": "none"}
+
+# --- NEW callback: show/hide git commit div ---
+@app.callback(
+    Output('git-commit-div', 'style'),
+    Input('enable-git-push', 'value'),
+    prevent_initial_call=True
+)
+def toggle_git_commit_div(enable_git_push):
+    """
+    Shows the 'commit-message' input & 'Git Commit and Push' button
+    only if 'enable-git-push' is set to 'yes'.
+    """
+    if enable_git_push == "yes":
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
@@ -784,7 +828,7 @@ Write the modified AADL code between ``` ```
 """
 
 def set_prompt(aadl_content, counter_example_content):
-    requirements_content_local = get_requirements_content()
+    requirements_content_local = req_content()
     requirements_section = construct_requirements_section(requirements_content_local)
     return construct_prompt(aadl_content, counter_example_content, requirements_section)
 
