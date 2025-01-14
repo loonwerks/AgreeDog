@@ -112,27 +112,44 @@ app.layout = dbc.Container([
         "margin-bottom": "20px"
     }),
 
-    # Header with logo, title, gear button
+    # -------------------- Header with logo & title on the same line --------------------
     html.Div([
-        html.Img(
-            src="assets/coqdog-5.png",
-            id="app-logo",
+        # Row 1: Logo & Title horizontally
+        html.Div([
+            html.Img(
+                src="assets/coqdog-5.png",
+                id="app-logo",
+                style={
+                    "display": "inline-block",
+                    "height": "50px",
+                    "vertical-align": "middle"
+                }
+            ),
+            html.H1(
+                "AGREE-Dog",
+                style={
+                    "display": "inline-block",
+                    "vertical-align": "middle",
+                    "margin-left": "20px"
+                }
+            )
+        ],
+        style={
+            "display": "flex",
+            "align-items": "center"
+        }),
+
+        # Row 2: Gear button underneath
+        html.Div(
+            gear_button,
             style={
-                "display": "inline-block",
-                "height": "50px",
-                "vertical-align": "middle"
+                "margin-top": "10px"  # space between the row above
             }
-        ),
-        html.H1(
-            "AGREE-Dog",
-            style={
-                "display": "inline-block",
-                "vertical-align": "middle",
-                "margin-left": "20px"
-            }
-        ),
-        gear_button
-    ], style={"display": "flex", "align-items": "center", "margin-bottom": "20px"}),
+        )
+    ],
+    style={
+        "margin-bottom": "20px"
+    }),
 
     # -------------------- Settings Menu --------------------
     html.Div(
@@ -152,7 +169,15 @@ app.layout = dbc.Container([
                 ],
                 value="AgreeDog"
             ),
-            dbc.Button("Confirm Selection", id='confirm-system-message-button', color="primary", className="mr-1"),
+            dbc.Button(
+                [
+                    html.I(className="fa fa-check", style={"margin-right": "5px"}),
+                    "Confirm Selection"
+                ],
+                id='confirm-system-message-button',
+                color="primary",
+                className="mr-1"
+            ),
             html.Hr(),
 
             # 2) Advanced items
@@ -212,7 +237,7 @@ app.layout = dbc.Container([
     # The "Enter the start file" input – initially hidden
     html.Div(
         id='initial-file-div',
-        style={"display": "none"},  # hidden by default; toggled by callback
+        style={"display": "none"},
         children=[
             dbc.Input(
                 id='initial-file',
@@ -223,17 +248,44 @@ app.layout = dbc.Container([
         ]
     ),
 
-    # Buttons row: Submit, Save, Upload Folder (optional)
+    # -- Buttons row: Submit, Save, Upload Folder (with FA icons) --
     html.Div([
-        dbc.Button("Submit", id='submit-button', color="primary", className="mr-1"),
-        dbc.Button("Save", id='copy-button', color="secondary", className="mr-1"),
+        # Submit with icon
+        dbc.Button(
+            [
+                html.I(className="fa fa-paper-plane", style={"margin-right": "5px"}),
+                "Submit"
+            ],
+            id='submit-button',
+            color="primary",
+            style={"margin-right": "10px"}
+        ),
+
+        # Save with icon
+        dbc.Button(
+            [
+                html.I(className="fa fa-save", style={"margin-right": "5px"}),
+                "Save"
+            ],
+            id='copy-button',
+            color="secondary",
+            style={"margin-right": "10px"}
+        ),
+
+        # The Upload Folder button, toggled by callback
         html.Div(
             id='upload-folder-div',
-            style={"display": "none"},
+            style={"display": "none", "margin-left": "10px"},
             children=[
                 dcc.Upload(
                     id='upload-folder',
-                    children=dbc.Button("Upload Folder", color="secondary", className="mr-1"),
+                    children=dbc.Button(
+                        [
+                            html.I(className="fa fa-upload", style={"margin-right": "5px"}),
+                            "Upload Folder"
+                        ],
+                        color="secondary"
+                    ),
                     multiple=False
                 )
             ]
@@ -273,7 +325,15 @@ app.layout = dbc.Container([
         dbc.ModalHeader("Confirm Shutdown"),
         dbc.ModalBody("Are you sure you want to shut down the server? This action cannot be undone."),
         dbc.ModalFooter([
-            dbc.Button("Yes, Shutdown", id="confirm-shutdown", color="danger"),
+            # Updated "Yes, Shutdown" button to have a check icon
+            dbc.Button(
+                [
+                    html.I(className="fa fa-check", style={"margin-right": "5px"}),
+                    "Yes, Shutdown"
+                ],
+                id="confirm-shutdown",
+                color="danger"
+            ),
             dbc.Button("Cancel", id="cancel-shutdown", className="ml-2")
         ])
     ], id="shutdown-modal", is_open=False),
@@ -330,7 +390,7 @@ def toggle_initial_file_div(include_upload):
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
-# -------------------- MODIFIED CALLBACK to always return a 6-tuple --------------------
+# 4) Main callback: handle system message confirmation & user input submission
 @app.callback(
     [
         Output('conversation-history', 'children'),
@@ -381,9 +441,7 @@ def handle_app_interactions(confirm_n_clicks,
 
     # A) System Message Confirmation
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
-        ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(
-            conversation_history, system_message_choice
-        )
+        ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
         return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
     # B) User Input Submission
@@ -392,7 +450,6 @@ def handle_app_interactions(confirm_n_clicks,
             start_time = datetime.now()
 
         if submit_n_clicks is None:
-            # Still must return 6 items
             return (
                 conversation_history_json,
                 "Enter your context and press 'Submit'.",
@@ -405,14 +462,16 @@ def handle_app_interactions(confirm_n_clicks,
         # Initialize conversation if empty
         if not conversation_history:
             conversation_history = [
-                {'role': 'system', 'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}
+                {
+                    'role': 'system',
+                    'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg
+                }
             ]
             context_added = "false"
 
         upload_directory = get_resource_path("uploaded_dir")
         subdirectories = [
-            os.path.join(upload_directory, d)
-            for d in os.listdir(upload_directory)
+            os.path.join(upload_directory, d) for d in os.listdir(upload_directory)
             if os.path.isdir(os.path.join(upload_directory, d))
         ]
         if include_upload_folder == "yes" and not subdirectories:
@@ -479,7 +538,8 @@ def handle_app_interactions(confirm_n_clicks,
                 and initial_file
                 and include_upload_folder == "yes"
             ):
-                # If the user chooses to upload and not use requirements chain, do nothing
+                # If the user chooses to upload and not use requirements chain,
+                # user_input stays as-is.
                 pass
 
         # Integrate requirements_content if provided
@@ -487,8 +547,7 @@ def handle_app_interactions(confirm_n_clicks,
             requirements_hint = (
                 "When you modify the code or try to write the fixed code, "
                 "consider the following requirements and make sure your modifications "
-                "don't break them:\n"
-                + requirements_file_content
+                "don't break them:\n" + requirements_file_content
             )
             user_input = f"\n{user_input}"
             print("Integrated requirements.txt content into user input.")
@@ -514,17 +573,17 @@ def handle_app_interactions(confirm_n_clicks,
             context_added
         )
 
-    # -------------------- DEFAULT RETURN FOR ANY OTHER PATH --------------------
+    # Default return if no branch is triggered
     return (
         conversation_history_json,
-        "",               # e.g. no new message
-        user_input,       # leave user input as is
-        "Tokens used: 0", # placeholder
+        "",
+        user_input,
+        "Tokens used: 0",
         f"Elapsed Time: {formatted_elapsed_time}",
         context_added
     )
 
-# 4) Toggle the Shutdown Confirmation Modal
+# 5) Toggle the Shutdown Confirmation Modal
 @app.callback(
     Output("shutdown-modal", "is_open"),
     [
@@ -536,6 +595,7 @@ def handle_app_interactions(confirm_n_clicks,
 )
 def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
     ctx = dash.callback_context
+
     if not ctx.triggered:
         return is_open
     button_id = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -546,7 +606,7 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
         return False
     return is_open
 
-# 5) Forceful Shutdown with os._exit(0)
+# 6) Forceful Shutdown with os._exit(0)
 @app.callback(
     Output('shutdown-status', 'children'),
     Input('confirm-shutdown', 'n_clicks'),
