@@ -1,0 +1,10 @@
+Requirement ID,Description,Priority
+assume_A_input_range,Assume that the input to System A is less than 20.,100
+guarantee_A_output_range,Guarantee that the output of System A is less than twice the input value.,100
+assume_B_input_range,Assume that the input to System B is less than 20.,100
+guarantee_B_output_range,Guarantee that the output of System B is less than the input value plus 15.,100
+guarantee_C_mode_always_is_increasing,"Guarantee that the mode is always increasing, meaning it is greater than the previous value.",100
+guarantee_C_output_range,"Guarantee that the output of System C equals the sum of Input1 and Input2 when mode is 3; otherwise, 0.",100
+assume_System_input_range,Assume that the input to the top-level system is less than 10.,100
+guarantee_System_mode_is_always_positive,Guarantee that the mode is always non-negative.,100
+guarantee_System_output_range,Guarantee that the output of the top-level system is less than 50.,100
