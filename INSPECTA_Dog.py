@@ -96,6 +96,17 @@ shutdown_button = dbc.Button(
     style={"display": "inline-block", "vertical-align": "middle"}
 )
 
+# -------------------- NEW: "Apply Modifications" button --------------------
+apply_button = dbc.Button(
+    [
+        html.I(className="fa fa-check-circle", style={"margin-right": "5px"}),
+        "Insert"
+    ],
+    id="apply-modifications",
+    color="secondary",
+    style={"margin-left": "5px"}
+)
+
 app.layout = dbc.Container([
     # Example "Footer" or other elements here, if needed
 
@@ -114,15 +125,11 @@ app.layout = dbc.Container([
                 ),
                 html.H1(
                     "AGREE-Dog",
-                    #style={
-                    #    "margin-left": "20px",
-                    #    "vertical-align": "middle"
-                    #}
                     style={
                         "font-family": "Arial, Helvetica",  # Modern sans-serif fonts
-                        "font-weight": "bold",  # Makes the text bold
-                        "font-size": "40px",  # Adjust the font size as needed
-                        "margin-left": "20px",  # Optional for alignment or spacing
+                        "font-weight": "bold",             # Makes the text bold
+                        "font-size": "40px",               # Adjust the font size as needed
+                        "margin-left": "20px",             # Optional for alignment or spacing
                         "vertical-align": "middle"
                     }
                 )
@@ -292,7 +299,11 @@ app.layout = dbc.Container([
                     multiple=False
                 )
             ]
-        )
+        ),
+
+        # ---------------- NEW: Add Apply Modifications button here ----------------
+        apply_button
+
     ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
 
     html.Div(id='upload-status', style={"margin-top": "10px"}),
@@ -356,6 +367,9 @@ app.layout = dbc.Container([
 
     html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
 
+    # -------------------- NEW: Status Div for "Apply Modifications" result --------------------
+    html.Div(id='apply-status', style={"margin-top": "10px", "color": "green"})
+
 ], fluid=True)
 
 # -------------------- Global Timer Variables --------------------
@@ -365,7 +379,7 @@ start_time = None
 elapsed_time = timedelta(0)
 formatted_elapsed_time = "00:00:00.00"
 
-# -------------------- Callbacks --------------------
+# -------------------- Existing Callbacks (unchanged) --------------------
 @app.callback(
     Output('system-message-menu', 'style'),
     Input('gear-button', 'n_clicks'),
@@ -710,6 +724,69 @@ def commit_and_push(n_clicks, commit_message):
         except Exception as e:
             os.chdir(current_directory_1)
             return f"An error occurred: {e}"
+
+# -------------------- NEW Callback for Apply Modifications --------------------
+@app.callback(
+    Output('apply-status', 'children'),
+    Input('apply-modifications', 'n_clicks'),
+    State('conversation-history', 'children'),
+    State('initial-file', 'value'),
+    prevent_initial_call=True
+)
+def handle_apply_modifications(n_clicks, conversation_history_json, initial_file):
+    """
+    1) Finds the last assistant message in conversation_history
+    2) Extracts code from triple backticks
+    3) Overwrites initial_file.aadl in the working_dir
+    4) Reminds user to revert via IDE/Git if unhappy
+    """
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+
+    if not conversation_history_json:
+        return "No conversation history to parse."
+
+    conversation_history = json.loads(conversation_history_json)
+    # Get the last assistant message
+    assistant_messages = [msg for msg in conversation_history if msg['role'] == 'assistant']
+    if not assistant_messages:
+        return "No assistant messages found to extract modifications."
+
+    last_assistant = assistant_messages[-1]['content']
+
+    import re
+    code_blocks = re.findall(r"```(.*?)```", last_assistant, flags=re.DOTALL)
+    if not code_blocks:
+        return "No code blocks (``` ```) found in the last assistant message."
+
+    # Use the first code block for simplicity
+    new_code = code_blocks[0].strip()
+
+    # Figure out the working directory & file name
+    args_local = INSPECTA_Dog_cmd_util.get_args()
+    working_dir = args_local.working_dir if args_local.working_dir else os.getcwd()
+
+    # If the user didn't provide initial_file in the UI, try from CLI
+    if not initial_file and args_local.start_file:
+        initial_file = args_local.start_file
+
+    if not initial_file:
+        return "No initial file specified. Provide it via CLI or UI."
+
+    # Add .aadl if missing -- will need to revisit maybe an error message is better.
+    if not initial_file.lower().endswith(".aadl"):
+        initial_file += ".aadl"
+
+    target_path = os.path.join(working_dir, initial_file)
+    # Overwrite the file
+    try:
+        with open(target_path, "w") as f:
+            f.write(new_code)
+    except Exception as e:
+        return f"Failed to overwrite {target_path}: {e}"
+
+    return (f"Successfully updated {target_path}. "
+            "If you're not happy with these changes, please revert via your IDE's Git or undo.")
 
 # -------------------- Utility Functions --------------------
 def read_requirements_file(file_path):
