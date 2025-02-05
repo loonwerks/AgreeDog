@@ -5,8 +5,8 @@
 Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
 Date: 1st July 2024
 """
-import os
 
+import os
 import dash
 from dash import dcc, html
 import dash_bootstrap_components as dbc
@@ -28,54 +28,85 @@ import INSPECTA_dog_system_msgs
 from INSPECTA_Dog_cmd_util import *
 from git_actions import *
 
-# Ensure necessary directories exist
+# -------------------- Global Logging Setup --------------------
+# A global list to store log messages.
+copilot_logs = []
+
+def log_message(msg, level="info"):
+    """
+    Appends a message with timestamp and level (INFO, WARNING, ERROR) to the global log list.
+    Also prints the message to the console.
+    """
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    full_msg = f"[{timestamp}] {level.upper()}: {msg}"
+    print(full_msg)
+    copilot_logs.append(full_msg)
+
+# -------------------- Ensure necessary directories exist --------------------
 directories = ["conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
 INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
 
-# Parse command-line arguments
+# -------------------- INITIAL CONFIGURATION --------------------
+# Parse command-line arguments once at startup:
 args = INSPECTA_Dog_cmd_util.get_args()
 
-# After loading environment variables, modify how openai.api_key is set:
-if args.user_open_api_key:
-    openai.api_key = args.user_open_api_key
+# Create a global configuration dictionary that will be updated by the new button.
+cli_config = {
+    "working_dir": args.working_dir,
+    "start_file": args.start_file,
+    "counter_example": args.counter_example,
+    "requirement_file": args.requirement_file,
+    "user_open_api_key": args.user_open_api_key,
+}
+
+# Set the OpenAI API key based on CLI or environment variable
+if cli_config["user_open_api_key"]:
+    openai.api_key = cli_config["user_open_api_key"]
 else:
     load_dotenv(find_dotenv())
     openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # -------------------- Process sys-requirement.txt File --------------------
 requirements_content = ""
-
 def req_content():
     global requirements_content
-    if args.requirement_file:
-        requirement_path = args.requirement_file
+    if cli_config["requirement_file"]:
+        requirement_path = cli_config["requirement_file"]
         if os.path.isfile(requirement_path):
-            print(f"Requirement file provided: {requirement_path}")
+            log_message(f"Requirement file provided: {requirement_path}", "info")
             try:
                 with open(requirement_path, 'r') as f:
                     requirements_content = f.read()
-                print("Contents of requirement.txt:")
-                print(requirements_content)
-                content = requirements_content
-                return content
+                log_message("Contents of sys_requirement.txt loaded successfully.", "info")
+                return requirements_content
             except Exception as e:
-                print(f"Error reading requirement file: {e}")
+                log_message(f"Error reading sys_requirement file: {e}", "error")
         else:
-            print(f"Requirement file not found at: {requirement_path}")
+            log_message(f"Requirement file not found at: {requirement_path}", "warning")
     else:
-        print("No requirement.txt file provided.")
-        return "No requirement.txt file provided."
-
+        log_message("No sys_requirement.txt file provided.", "warning")
+        return "No sys_requirement.txt file provided."
 req_content()
 requirements_file_content = requirements_content
 
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# Add components to the layout for displaying the token count and timer
-token_display = html.Div(id='token-count', style={"margin-top": "20px"})
-timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
+# New button for updating CLI config
+update_cli_button = dbc.Button(
+    [
+        html.I(className="fa fa-refresh", style={"margin-right": "5px"}),
+        "Update CLI Config"
+    ],
+    id="update-cli-config",
+    color="info",
+    style={"margin-left": "5px"}
+)
 
+# Status div for update CLI config
+update_cli_status = html.Div(id='update-cli-status', style={"margin-top": "10px", "color": "green"})
+
+# Pre-existing UI components
 gear_button = dbc.Button(
     [
         html.I(className="fa fa-cog", style={"margin-right": "5px"})
@@ -96,7 +127,6 @@ shutdown_button = dbc.Button(
     style={"display": "inline-block", "vertical-align": "middle"}
 )
 
-# -------------------- NEW: "Apply Modifications" button --------------------
 apply_button = dbc.Button(
     [
         html.I(className="fa fa-check-circle", style={"margin-right": "5px"}),
@@ -107,57 +137,40 @@ apply_button = dbc.Button(
     style={"margin-left": "5px"}
 )
 
-app.layout = dbc.Container([
-    # Example "Footer" or other elements here, if needed
+# Other UI components
+token_display = html.Div(id='token-count', style={"margin-top": "20px"})
+timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
-    # -------------------- Header with dog image & text on the left, Collins on the right --------------------
+# -------------------- Dash App Layout --------------------
+app.layout = dbc.Container([
+    # Header with dog image & text on the left, Collins on the right
     html.Div([
         html.Div([
-            # Sub-Div for dog icon + "AGREE-Dog" text on the left
             html.Div([
                 html.Img(
                     src="assets/coqdog-5.png",
                     id="app-logo",
-                    style={
-                        "height": "70px",
-                        "vertical-align": "middle"
-                    }
+                    style={"height": "70px", "vertical-align": "middle"}
                 ),
                 html.H1(
                     "AGREE-Dog",
                     style={
-                        "font-family": "Arial, Helvetica",  # Modern sans-serif fonts
-                        "font-weight": "bold",             # Makes the text bold
-                        "font-size": "40px",               # Adjust the font size as needed
-                        "margin-left": "20px",             # Optional for alignment or spacing
+                        "font-family": "Arial, Helvetica",
+                        "font-weight": "bold",
+                        "font-size": "40px",
+                        "margin-left": "20px",
                         "vertical-align": "middle"
                     }
                 )
-            ], style={
-                "display": "flex",
-                "align-items": "center"
-            }),
-
-            # The Collins logo on the right
+            ], style={"display": "flex", "align-items": "center"}),
             html.Img(
                 src="assets/collins_logo.png",
                 id="collins-logo",
-                style={
-                    "height": "70px",
-                    "width": "250px",
-                    "vertical-align": "middle"
-                }
+                style={"height": "70px", "width": "250px", "vertical-align": "middle"}
             )
-        ], style={
-            # Outer flex container to push left item to left, Collins to right
-            "display": "flex",
-            "align-items": "center",
-            "justify-content": "space-between",
-            "margin-bottom": "5px"
-        })
+        ], style={"display": "flex", "align-items": "center", "justify-content": "space-between", "margin-bottom": "5px"})
     ]),
-
-    # -------------------- Settings Menu --------------------
+    # Settings Menu
     html.Div(
         id='system-message-menu',
         style={"display": "none", "margin-bottom": "20px"},
@@ -180,8 +193,6 @@ app.layout = dbc.Container([
                 className="mr-1"
             ),
             html.Hr(),
-
-            # Additional radio items...
             dcc.RadioItems(
                 id='include-upload-folder',
                 options=[
@@ -223,8 +234,6 @@ app.layout = dbc.Container([
                 inline=True,
                 style={"margin-top": "10px"}
             ),
-
-            # Radio for enabling Git push
             dbc.RadioItems(
                 id='enable-git-push',
                 options=[
@@ -235,19 +244,16 @@ app.layout = dbc.Container([
                 inline=True,
                 style={"margin-top": "10px"}
             ),
-
             html.Hr(),
             shutdown_button
         ]
     ),
-
-    # -------------------- Main Textarea & Buttons --------------------
+    # Main Textarea & Buttons
     dcc.Textarea(
         id='user-input',
         style={"width": "100%", "height": 200},
         placeholder='Enter your context...'
     ),
-
     # The "Enter the start file" input – initially hidden
     html.Div(
         id='initial-file-div',
@@ -261,7 +267,6 @@ app.layout = dbc.Container([
             )
         ]
     ),
-
     html.Div([
         dbc.Button(
             [
@@ -282,7 +287,8 @@ app.layout = dbc.Container([
             style={"margin-right": "2px"}
         ),
         gear_button,
-
+        update_cli_button,  # New Update CLI Config button
+        update_cli_status,  # Status message for CLI config update
         html.Div(
             id='upload-folder-div',
             style={"display": "none", "margin-left": "2px"},
@@ -300,31 +306,16 @@ app.layout = dbc.Container([
                 )
             ]
         ),
-
-        # ---------------- NEW: Add Apply Modifications button here ----------------
         apply_button
-
     ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
-
     html.Div(id='upload-status', style={"margin-top": "10px"}),
     html.Div(id='copy-status', style={"margin-top": "10px"}),
     html.Div(id='response-output', style={"white-space": "pre-line", "margin-top": "20px"}),
-
     # Hidden placeholders
-    html.Div(
-        id='conversation-history',
-        style={'display': 'none'},
-        children="[]"
-    ),
-    html.Div(
-        id='context-added',
-        style={'display': 'none'},
-        children="false"
-    ),
-
+    html.Div(id='conversation-history', style={'display': 'none'}, children="[]"),
+    html.Div(id='context-added', style={'display': 'none'}, children="false"),
     token_display,
     timer_display,
-
     # Git commit field
     html.Div(
         id='git-commit-div',
@@ -348,7 +339,6 @@ app.layout = dbc.Container([
             html.Div(id='push-status', style={"margin-top": "20px"}),
         ]
     ),
-
     dbc.Modal([
         dbc.ModalHeader("Confirm Shutdown"),
         dbc.ModalBody("Are you sure you want to shut down the server? This action cannot be undone."),
@@ -364,12 +354,23 @@ app.layout = dbc.Container([
             dbc.Button("Cancel", id="cancel-shutdown", className="ml-2")
         ])
     ], id="shutdown-modal", is_open=False),
-
     html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
-
-    # -------------------- NEW: Status Div for "Apply Modifications" result --------------------
-    html.Div(id='apply-status', style={"margin-top": "10px", "color": "green"})
-
+    html.Div(id='apply-status', style={"margin-top": "10px", "color": "green"}),
+    # -------------------- New Logging Section --------------------
+    html.Hr(),
+    html.H4("Copilot Logs", style={"margin-top": "20px"}),
+    html.Div(
+        id="log-section",
+        style={
+            "backgroundColor": "#f8f9fa",
+            "padding": "10px",
+            "border": "1px solid #ccc",
+            "maxHeight": "200px",
+            "overflowY": "auto"
+        }
+    ),
+    # Hidden Interval component to periodically update the log display
+    dcc.Interval(id="log-update-interval", interval=2000, n_intervals=0)
 ], fluid=True)
 
 # -------------------- Global Timer Variables --------------------
@@ -379,7 +380,7 @@ start_time = None
 elapsed_time = timedelta(0)
 formatted_elapsed_time = "00:00:00.00"
 
-# -------------------- Existing Callbacks (unchanged) --------------------
+# -------------------- Existing Callbacks --------------------
 @app.callback(
     Output('system-message-menu', 'style'),
     Input('gear-button', 'n_clicks'),
@@ -513,14 +514,14 @@ def handle_app_interactions(confirm_n_clicks,
                 context_added
             )
 
-        if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
-            args_local = INSPECTA_Dog_cmd_util.get_args()
-            target_directory = args_local.working_dir
-            if args_local.start_file is not None:
-                initial_file = args_local.start_file
+        # Use cli_config for working directory and start file:
+        if cli_config["working_dir"] is not None:
+            target_directory = cli_config["working_dir"]
+            if cli_config["start_file"] is not None:
+                initial_file = cli_config["start_file"]
         else:
             target_directory = subdirectories[0] if subdirectories else ""
-            print("Target directory:", target_directory)
+            log_message("Using subdirectory as target directory.", "info")
 
         project_files = read_project_files(target_directory)
 
@@ -535,20 +536,18 @@ def handle_app_interactions(confirm_n_clicks,
                     include_upload_folder,
                     context_added
                 )
-                if file_context and INSPECTA_Dog_cmd_util.get_args().counter_example is not None:
-                    cex_path = INSPECTA_Dog_cmd_util.get_args().counter_example
+                if file_context and cli_config["counter_example"] is not None:
+                    cex_path = cli_config["counter_example"]
                     cex = read_counter_example_file(cex_path)
                     prompt = set_prompt(file_context, cex)
                     user_input = f"{prompt}\n{user_input}"
                 context_added = "true"
 
-            elif (include_requirements_chain == "no" and initial_file and
-                  include_upload_folder == "no" and context_added == "false" and
-                  INSPECTA_Dog_cmd_util.get_args().counter_example is not None):
-                cex_path = INSPECTA_Dog_cmd_util.get_args().counter_example
+            elif (include_requirements_chain == "no" and initial_file and include_upload_folder == "no" and context_added == "false" and cli_config["counter_example"] is not None):
+                cex_path = cli_config["counter_example"]
                 cex = read_counter_example_file(cex_path)
-                start_file_with_ext = INSPECTA_Dog_cmd_util.get_args().start_file
-                working_dir = INSPECTA_Dog_cmd_util.get_args().working_dir
+                start_file_with_ext = cli_config["start_file"]
+                working_dir = cli_config["working_dir"]
                 start_file_path = os.path.join(working_dir, start_file_with_ext)
                 start_file_content = read_start_file_content(start_file_path)
                 prompt = set_prompt(start_file_content, cex)
@@ -565,7 +564,7 @@ def handle_app_interactions(confirm_n_clicks,
                 "don't break them:\n" + requirements_file_content
             )
             user_input = f"\n{user_input}"
-            print("Integrated requirements.txt content into user input.")
+            log_message("Integrated requirements.txt content into user input.", "info")
 
         conversation_history.append({'role': 'user', 'content': user_input})
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
@@ -658,7 +657,9 @@ def copy_conversation_history(n_clicks, conversation_history_json):
     with open(destination_file, 'w') as file:
         json.dump(conversation_history, file, indent=4)
 
-    return f"Successfully copied to {destination_file}"
+    message = f"Successfully copied to {destination_file}"
+    #log_message(message, "info")  # Log after save
+    return log_message(message, "info") #message
 
 @app.callback(
     Output('upload-status', 'children'),
@@ -685,6 +686,7 @@ def handle_upload(contents, filename, include_upload):
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(upload_directory)
 
+    log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info")
     return "Folder uploaded and extracted successfully!"
 
 def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
@@ -720,10 +722,13 @@ def commit_and_push(n_clicks, commit_message):
         try:
             success, message = git_commit_push(commit_message)
             os.chdir(current_directory_1)
+            log_message(message, "info")  # Log successful git commit/push
             return message
         except Exception as e:
             os.chdir(current_directory_1)
-            return f"An error occurred: {e}"
+            error_message = f"An error occurred: {e}"
+            log_message(error_message, "error")
+            return error_message
 
 # -------------------- NEW Callback for Apply Modifications --------------------
 @app.callback(
@@ -738,7 +743,8 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
     1) Finds the last assistant message in conversation_history
     2) Extracts code from triple backticks
     3) Overwrites initial_file.aadl in the working_dir
-    4) Reminds user to revert via IDE/Git if unhappy
+    4) Comments out "aadl" on the first line if present
+    5) Reminds user to revert via IDE/Git if unhappy
     """
     if not n_clicks:
         raise dash.exceptions.PreventUpdate
@@ -747,46 +753,54 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
         return "No conversation history to parse."
 
     conversation_history = json.loads(conversation_history_json)
-    # Get the last assistant message
     assistant_messages = [msg for msg in conversation_history if msg['role'] == 'assistant']
     if not assistant_messages:
-        return "No assistant messages found to extract modifications."
+        message = "No assistant messages found to extract modifications."
+        return log_message(message, "warning")
 
     last_assistant = assistant_messages[-1]['content']
 
     import re
     code_blocks = re.findall(r"```(.*?)```", last_assistant, flags=re.DOTALL)
     if not code_blocks:
-        return "No code blocks (``` ```) found in the last assistant message."
+        message = "No code blocks (``` ```) found in the last assistant message."
+        return log_message(message,"warning")
 
-    # Use the first code block for simplicity
     new_code = code_blocks[0].strip()
 
-    # Figure out the working directory & file name
-    args_local = INSPECTA_Dog_cmd_util.get_args()
-    working_dir = args_local.working_dir if args_local.working_dir else os.getcwd()
+    # Use cli_config instead of re-calling get_args()
+    working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
 
-    # If the user didn't provide initial_file in the UI, try from CLI
-    if not initial_file and args_local.start_file:
-        initial_file = args_local.start_file
+    if not initial_file and cli_config["start_file"]:
+        initial_file = cli_config["start_file"]
 
     if not initial_file:
-        return "No initial file specified. Provide it via CLI or UI."
+        error_message = "No initial file specified. Provide it via CLI or UI."
+        return log_message(error_message, "warning")
 
-    # Add .aadl if missing -- will need to revisit maybe an error message is better.
     if not initial_file.lower().endswith(".aadl"):
         initial_file += ".aadl"
 
     target_path = os.path.join(working_dir, initial_file)
-    # Overwrite the file
+
+    if target_path.lower().endswith(".aadl"):
+        new_code = re.sub(r'^(?:\s*)aadl', '-- aadl', new_code)
+
     try:
         with open(target_path, "w") as f:
             f.write(new_code)
     except Exception as e:
-        return f"Failed to overwrite {target_path}: {e}"
+        error_message = f"Failed to overwrite {target_path}: {e}"
+        return log_message(error_message, "error")
+       # return error_message
 
-    return (f"Successfully updated {target_path}. "
-            "If you're not happy with these changes, please revert via your IDE's Git or undo.")
+    success_message = (
+        f"Successfully updated {target_path}. \n Please refresh the model in your editor to see the updated file. "
+        "If you're not happy with these changes, please revert via your IDE's Git or undo."
+    )
+    return log_message(success_message, "info")  # Log after insert
+
+    #return success_message
 
 # -------------------- Utility Functions --------------------
 def read_requirements_file(file_path):
@@ -800,9 +814,8 @@ def read_requirements_file(file_path):
     return result
 
 def get_requirements_content():
-    args_local = INSPECTA_Dog_cmd_util.get_args()
     requirements_content_local = " "
-    requirements_file_path = getattr(args_local, 'requirements_file', None)
+    requirements_file_path = cli_config["requirement_file"]
 
     if requirements_file_path:
         if os.path.isfile(requirements_file_path):
@@ -835,8 +848,7 @@ def construct_requirements_section(requirements_file_cont):
     return ""
 
 def construct_prompt(aadl_content, counter_example_content, requirements_section):
-    args_local = INSPECTA_Dog_cmd_util.get_args()
-    if args_local.counter_example is None:
+    if cli_config["counter_example"] is None:
         return f"""
 For the following AADL model:
 {aadl_content}
@@ -865,8 +877,8 @@ def set_prompt(aadl_content, counter_example_content):
     return construct_prompt(aadl_content, counter_example_content, requirements_section)
 
 def remove_file_ext_from_cmd_like_ui(initial_file):
-    if INSPECTA_Dog_cmd_util.get_args().start_file is not None:
-        initial_file_cmd = INSPECTA_Dog_cmd_util.get_args().start_file
+    if cli_config["start_file"] is not None:
+        initial_file_cmd = cli_config["start_file"]
         initial_file_without_ext = initial_file_cmd[:-5]
         return initial_file_without_ext
     else:
@@ -910,7 +922,7 @@ def read_start_file_content(file_path):
             file_content = f.read()
         return file_content.strip()
     except FileNotFoundError:
-        print(f"File not found: {file_path}")
+        log_message(f"File not found: {file_path}", "error")
         return ""
 
 def read_generic_file_content(file_path):
@@ -933,7 +945,7 @@ def handle_requires(file_path, project_files, files_to_check, processed_files):
                         files_to_check.append(required_pkg)
 
 def read_project_files(directory):
-    if INSPECTA_Dog_cmd_util.get_args().working_dir is not None:
+    if cli_config["working_dir"] is not None:
         agree_files = os.path.join(directory, "_AgreeFiles")
         if not os.path.exists(agree_files):
             INSPECTA_Dog_cmd_util.create_agree_files_file(directory)
@@ -984,7 +996,7 @@ def concatenate_imports(start_file, project_files, folder_path,
             file_path = os.path.join(folder_path, current_file + ".aadl")
 
         if not os.path.exists(file_path):
-            print(f"{current_file} is not in packages")
+            log_message(f"{current_file} is not in packages", "warning")
             continue
 
         if current_file == start_file:
@@ -1059,9 +1071,39 @@ def format_display_text(conversation_history, display_mode):
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
 
+# -------------------- Callback for Update CLI Config --------------------
+@app.callback(
+    Output('update-cli-status', 'children'),
+    Input('update-cli-config', 'n_clicks')
+)
+def update_cli_config_callback(n_clicks):
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+    new_args = INSPECTA_Dog_cmd_util.get_args()
+    cli_config["working_dir"] = new_args.working_dir
+    cli_config["start_file"] = new_args.start_file
+    cli_config["counter_example"] = new_args.counter_example
+    cli_config["requirement_file"] = new_args.requirement_file
+    cli_config["user_open_api_key"] = new_args.user_open_api_key
+    if cli_config["user_open_api_key"]:
+        openai.api_key = cli_config["user_open_api_key"]
+    message = "CLI configuration updated successfully!"
+    return log_message(message, "info")
+
+
+# -------------------- Callback for Log Display --------------------
+@app.callback(
+    Output('log-section', 'children'),
+    Input('log-update-interval', 'n_intervals')
+)
+def update_log_display(n):
+    # Display the log messages as a list (most recent last)
+    return html.Ul([html.Li(msg) for msg in copilot_logs])
+
+# -------------------- Run the Server --------------------
 if __name__ == '__main__':
-    print("Starting the Dash server...")
+    log_message("Starting the Dash server...", "info")
     try:
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
-        print("Shutting down the server gracefully.")
+        log_message("Shutting down the server gracefully.", "warning")
