@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # import pydevd_pycharm
 # pydevd_pycharm.settrace('localhost', port=5678, stdoutToServer=True, stderrToServer=True, suspend=False)
 """
@@ -41,6 +42,7 @@ def log_message(msg, level="info"):
     full_msg = f"[{timestamp}] {level.upper()}: {msg}"
     print(full_msg)
     copilot_logs.append(full_msg)
+    return full_msg  # also return the message for callback outputs
 
 # -------------------- Ensure necessary directories exist --------------------
 directories = ["conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
@@ -50,7 +52,7 @@ INSPECTA_Dog_cmd_util.ensure_writable_directories(directories)
 # Parse command-line arguments once at startup:
 args = INSPECTA_Dog_cmd_util.get_args()
 
-# Create a global configuration dictionary that will be updated by the new button.
+# Create a global configuration dictionary.
 cli_config = {
     "working_dir": args.working_dir,
     "start_file": args.start_file,
@@ -89,22 +91,23 @@ def req_content():
 req_content()
 requirements_file_content = requirements_content
 
+# -------------------- NEW GLOBAL VARIABLE for Refresh Prompt --------------------
+last_counterexample_file = None
+
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# New button for updating CLI config
-update_cli_button = dbc.Button(
+# NEW Refresh Prompt button, status display, and a hidden Store for the prompt.
+refresh_prompt_button = dbc.Button(
     [
-        html.I(className="fa fa-refresh", style={"margin-right": "5px"}),
-        "Update CLI Config"
+        html.I(className="fa fa-sync", style={"margin-right": "5px"}),
+        "Refresh Prompt"
     ],
-    id="update-cli-config",
-    color="info",
+    id="refresh-prompt",
+    color="warning",
     style={"margin-left": "5px"}
 )
-
-# Status div for update CLI config
-update_cli_status = html.Div(id='update-cli-status', style={"margin-top": "10px", "color": "green"})
+refresh_prompt_status = html.Div(id='refresh-prompt-status', style={"margin-top": "10px", "color": "green"})
 
 # Pre-existing UI components
 gear_button = dbc.Button(
@@ -287,8 +290,8 @@ app.layout = dbc.Container([
             style={"margin-right": "2px"}
         ),
         gear_button,
-        update_cli_button,  # New Update CLI Config button
-        update_cli_status,  # Status message for CLI config update
+        refresh_prompt_button,  # NEW Refresh Prompt button
+        refresh_prompt_status,  # Status message for refresh prompt
         html.Div(
             id='upload-folder-div',
             style={"display": "none", "margin-left": "2px"},
@@ -356,6 +359,8 @@ app.layout = dbc.Container([
     ], id="shutdown-modal", is_open=False),
     html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
     html.Div(id='apply-status', style={"margin-top": "10px", "color": "green"}),
+    # Hidden global store for the context prompt (NEW)
+    dcc.Store(id="global-context-prompt", data=""),
     # -------------------- New Logging Section --------------------
     html.Hr(),
     html.H4("Copilot Logs", style={"margin-top": "20px"}),
@@ -426,6 +431,7 @@ def toggle_git_commit_div(enable_git_push):
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
+# -------------------- Modified Callback for App Interactions --------------------
 @app.callback(
     [
         Output('conversation-history', 'children'),
@@ -448,7 +454,8 @@ def toggle_git_commit_div(enable_git_push):
         State('user-input', 'value'),
         State('initial-file', 'value'),
         State('include-requirements-chain', 'value'),
-        State('include-upload-folder', 'value')
+        State('include-upload-folder', 'value'),
+        State('global-context-prompt', 'data')  # NEW state for global context prompt
     ]
 )
 def handle_app_interactions(confirm_n_clicks,
@@ -461,7 +468,8 @@ def handle_app_interactions(confirm_n_clicks,
                             user_input,
                             initial_file,
                             include_requirements_chain,
-                            include_upload_folder):
+                            include_upload_folder,
+                            global_context_prompt):
     global start_time, elapsed_time, formatted_elapsed_time, time_frames, total_api_time
     time_frames.append(elapsed_time)
     reset_timer_variables()
@@ -473,6 +481,11 @@ def handle_app_interactions(confirm_n_clicks,
         triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
     conversation_history = json.loads(conversation_history_json)
+
+    # If the user has provided input and we have a global prompt, prepend it.
+    if triggered_id == 'submit-button' and user_input:
+        if global_context_prompt and not user_input.startswith(global_context_prompt):
+            user_input = global_context_prompt + "\n" + user_input
 
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
         ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
@@ -521,7 +534,7 @@ def handle_app_interactions(confirm_n_clicks,
                 initial_file = cli_config["start_file"]
         else:
             target_directory = subdirectories[0] if subdirectories else ""
-            log_message("Using subdirectory as target directory.", "info")
+            log_message(f"Using subdirectory {target_directory} as target directory.", "info")
 
         project_files = read_project_files(target_directory)
 
@@ -564,7 +577,7 @@ def handle_app_interactions(confirm_n_clicks,
                 "don't break them:\n" + requirements_file_content
             )
             user_input = f"\n{user_input}"
-            log_message("Integrated requirements.txt content into user input.", "info")
+            log_message("Integrated sys_requirements.txt content into user input.", "info")
 
         conversation_history.append({'role': 'user', 'content': user_input})
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
@@ -594,6 +607,69 @@ def handle_app_interactions(confirm_n_clicks,
         f"Elapsed Time: {formatted_elapsed_time}",
         context_added
     )
+
+# -------------------- Callback for Apply Modifications (Insert) --------------------
+@app.callback(
+    Output('apply-status', 'children'),
+    Input('apply-modifications', 'n_clicks'),
+    State('conversation-history', 'children'),
+    State('initial-file', 'value'),
+    prevent_initial_call=True
+)
+def handle_apply_modifications(n_clicks, conversation_history_json, initial_file):
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+
+    if not conversation_history_json:
+        log_message("No conversation history to parse.","warning")
+        return "No conversation history to parse."
+
+    conversation_history = json.loads(conversation_history_json)
+    assistant_messages = [msg for msg in conversation_history if msg['role'] == 'assistant']
+    if not assistant_messages:
+        message = "No assistant messages found to extract modifications."
+        return log_message(message, "warning")
+
+    last_assistant = assistant_messages[-1]['content']
+
+    import re
+    code_blocks = re.findall(r"```(.*?)```", last_assistant, flags=re.DOTALL)
+    if not code_blocks:
+        message = "No code blocks (``` ```) found in the last assistant message."
+        return log_message(message, "warning")
+
+    new_code = code_blocks[0].strip()
+
+    # Use cli_config instead of re-calling get_args()
+    working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
+
+    if not initial_file and cli_config["start_file"]:
+        initial_file = cli_config["start_file"]
+
+    if not initial_file:
+        error_message = "No initial file specified. Provide it via CLI or UI."
+        return log_message(error_message, "warning")
+
+    if not initial_file.lower().endswith(".aadl"):
+        initial_file += ".aadl"
+
+    target_path = os.path.join(working_dir, initial_file)
+
+    # Modify first line if "aadl" is present.
+    new_code = re.sub(r'^(?:\s*)aadl', '-- aadl', new_code)
+
+    try:
+        with open(target_path, "w") as f:
+            f.write(new_code)
+    except Exception as e:
+        error_message = f"Failed to overwrite {target_path}: {e}"
+        return log_message(error_message, "error")
+
+    success_message = (
+        f"Successfully updated {target_path}. \n Please refresh the model in your editor to see the updated file. "
+        "If you're not happy with these changes, please revert via your IDE's Git or undo."
+    )
+    return log_message(success_message, "info")
 
 @app.callback(
     Output("shutdown-modal", "is_open"),
@@ -628,8 +704,9 @@ def shutdown_server(n_clicks):
             os._exit(0)
         thread = threading.Thread(target=force_shutdown)
         thread.start()
+        #log_message("Server is shutting down immediately...","info")
         return "Server is shutting down immediately..."
-    return ""
+    return  log_message("Server is shutting down immediately...", "info") #""
 
 @app.callback(
     Output('copy-status', 'children'),
@@ -658,8 +735,7 @@ def copy_conversation_history(n_clicks, conversation_history_json):
         json.dump(conversation_history, file, indent=4)
 
     message = f"Successfully copied to {destination_file}"
-    #log_message(message, "info")  # Log after save
-    return log_message(message, "info") #message
+    return log_message(message, "info")
 
 @app.callback(
     Output('upload-status', 'children'),
@@ -687,7 +763,7 @@ def handle_upload(contents, filename, include_upload):
         zip_ref.extractall(upload_directory)
 
     log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info")
-    return "Folder uploaded and extracted successfully!"
+    return log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info") #"Folder uploaded and extracted successfully!"
 
 def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
     global total_api_time
@@ -722,7 +798,7 @@ def commit_and_push(n_clicks, commit_message):
         try:
             success, message = git_commit_push(commit_message)
             os.chdir(current_directory_1)
-            log_message(message, "info")  # Log successful git commit/push
+            log_message(message, "info")
             return message
         except Exception as e:
             os.chdir(current_directory_1)
@@ -730,77 +806,89 @@ def commit_and_push(n_clicks, commit_message):
             log_message(error_message, "error")
             return error_message
 
-# -------------------- NEW Callback for Apply Modifications --------------------
+# -------------------- NEW Callback for Refresh Prompt --------------------
 @app.callback(
-    Output('apply-status', 'children'),
-    Input('apply-modifications', 'n_clicks'),
-    State('conversation-history', 'children'),
-    State('initial-file', 'value'),
-    prevent_initial_call=True
+    [Output('global-context-prompt', 'data'),
+     Output('refresh-prompt-status', 'children')],
+    Input('refresh-prompt', 'n_clicks')
 )
-def handle_apply_modifications(n_clicks, conversation_history_json, initial_file):
-    """
-    1) Finds the last assistant message in conversation_history
-    2) Extracts code from triple backticks
-    3) Overwrites initial_file.aadl in the working_dir
-    4) Comments out "aadl" on the first line if present
-    5) Reminds user to revert via IDE/Git if unhappy
-    """
+def refresh_prompt_callback(n_clicks):
     if not n_clicks:
         raise dash.exceptions.PreventUpdate
 
-    if not conversation_history_json:
-        return "No conversation history to parse."
+    # Derive the counterexample folder from the CLI argument by removing the file name.
+    if cli_config["counter_example"]:
+        counterexample_dir = os.path.dirname(cli_config["counter_example"])
+    else:
+        counterexample_dir = "counter_examples"
 
-    conversation_history = json.loads(conversation_history_json)
-    assistant_messages = [msg for msg in conversation_history if msg['role'] == 'assistant']
-    if not assistant_messages:
-        message = "No assistant messages found to extract modifications."
-        return log_message(message, "warning")
+    if not os.path.exists(counterexample_dir):
+        message = f"Counterexample folder not found: {counterexample_dir}"
+        return dash.no_update, log_message(message, "warning")
 
-    last_assistant = assistant_messages[-1]['content']
+    # List only files in the folder.
+    files = [f for f in os.listdir(counterexample_dir)
+             if os.path.isfile(os.path.join(counterexample_dir, f))]
+    if not files and cli_config["start_file"]:
+        working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
+        start_file_path = os.path.join(working_dir, cli_config["start_file"])
+        start_file_content = read_start_file_content(start_file_path)
+        new_prompt = (
+            "No new counterexample detected in counterexample folder. "
+            "Answer any question or request that you find in my Addle file below"
+            f"{start_file_content}. "
+            "And explain the modification you made."
+        )
+        return new_prompt, log_message("No counterexample files found. Default prompt set.","warning")
 
-    import re
-    code_blocks = re.findall(r"```(.*?)```", last_assistant, flags=re.DOTALL)
-    if not code_blocks:
-        message = "No code blocks (``` ```) found in the last assistant message."
-        return log_message(message,"warning")
+    # Sort files by modification time to get the newest file.
+    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
+    latest_file = files_sorted[-1]
 
-    new_code = code_blocks[0].strip()
+    global last_counterexample_file
+    if last_counterexample_file != latest_file:
+        last_counterexample_file = latest_file
+        with open(os.path.join(counterexample_dir, latest_file), 'r') as f:
+            cex_content = f.read()
+        # For the AADL content, try reading the start file if provided.
+        if cli_config["start_file"]:
+            working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
+            start_file_path = os.path.join(working_dir, cli_config["start_file"])
+            aadl_content = read_start_file_content(start_file_path)
+        else:
+            aadl_content = ""
+        new_prompt = set_prompt(aadl_content, cex_content)
+        status = f"New counterexample file detected: {latest_file}. Prompt updated."
+    elif cli_config["start_file"]:
+        working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
+        start_file_path = os.path.join(working_dir, cli_config["start_file"])
+        aadl_content = read_start_file_content(start_file_path)
+        new_prompt = (
+            "No new counterexample detected in counterexample folder. "
+            "Answer any question or request that you find in my Addle file. below: "
+            f"\n{aadl_content}\n"
+            "And explain the modification you made."
+        )
+        #log_message("updated prompt with modified aadl file no counterexample file detected","info")
+        #status = "updated aadle file and no new counterexample file detected. Default prompt set."
+        return new_prompt, log_message("updated prompt with modified aadl file no counterexample file detected","info") #status
+    else:
+        new_prompt = (
+            "No new counterexample detected in counterexample folder. "
+            "Answer any question or request that you find in my Addle file. "
+            "And explain the modification you made."
+        )
+        status = "No new counterexample file detected. Default prompt set."
+        log_message(status, "info")
+    return new_prompt, log_message(status, "info")#status
 
-    # Use cli_config instead of re-calling get_args()
-    working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
-
-    if not initial_file and cli_config["start_file"]:
-        initial_file = cli_config["start_file"]
-
-    if not initial_file:
-        error_message = "No initial file specified. Provide it via CLI or UI."
-        return log_message(error_message, "warning")
-
-    if not initial_file.lower().endswith(".aadl"):
-        initial_file += ".aadl"
-
-    target_path = os.path.join(working_dir, initial_file)
-
-    if target_path.lower().endswith(".aadl"):
-        new_code = re.sub(r'^(?:\s*)aadl', '-- aadl', new_code)
-
-    try:
-        with open(target_path, "w") as f:
-            f.write(new_code)
-    except Exception as e:
-        error_message = f"Failed to overwrite {target_path}: {e}"
-        return log_message(error_message, "error")
-       # return error_message
-
-    success_message = (
-        f"Successfully updated {target_path}. \n Please refresh the model in your editor to see the updated file. "
-        "If you're not happy with these changes, please revert via your IDE's Git or undo."
-    )
-    return log_message(success_message, "info")  # Log after insert
-
-    #return success_message
+# -------------------- Callback for Log Display --------------------
+@app.callback(
+    Output('log-section', 'children'),
+    Input('log-update-interval', 'n_intervals')
+)
+def update_log_display(n):
+    return html.Ul([html.Li(msg) for msg in copilot_logs])
 
 # -------------------- Utility Functions --------------------
 def read_requirements_file(file_path):
@@ -920,6 +1008,7 @@ def read_start_file_content(file_path):
     try:
         with open(file_path, 'r') as f:
             file_content = f.read()
+        #log_message(f"file {file_path} is read", "info")
         return file_content.strip()
     except FileNotFoundError:
         log_message(f"File not found: {file_path}", "error")
@@ -927,6 +1016,7 @@ def read_start_file_content(file_path):
 
 def read_generic_file_content(file_path):
     with open(file_path, 'r') as f:
+        #log_message(f"file {file_path} is read","info")
         return f.read()
 
 def handle_requires(file_path, project_files, files_to_check, processed_files):
@@ -1070,35 +1160,6 @@ def format_display_text(conversation_history, display_mode):
             label = html.Span("AGREE-Dog:", style={'color': 'red'})
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
-
-# -------------------- Callback for Update CLI Config --------------------
-@app.callback(
-    Output('update-cli-status', 'children'),
-    Input('update-cli-config', 'n_clicks')
-)
-def update_cli_config_callback(n_clicks):
-    if not n_clicks:
-        raise dash.exceptions.PreventUpdate
-    new_args = INSPECTA_Dog_cmd_util.get_args()
-    cli_config["working_dir"] = new_args.working_dir
-    cli_config["start_file"] = new_args.start_file
-    cli_config["counter_example"] = new_args.counter_example
-    cli_config["requirement_file"] = new_args.requirement_file
-    cli_config["user_open_api_key"] = new_args.user_open_api_key
-    if cli_config["user_open_api_key"]:
-        openai.api_key = cli_config["user_open_api_key"]
-    message = "CLI configuration updated successfully!"
-    return log_message(message, "info")
-
-
-# -------------------- Callback for Log Display --------------------
-@app.callback(
-    Output('log-section', 'children'),
-    Input('log-update-interval', 'n_intervals')
-)
-def update_log_display(n):
-    # Display the log messages as a list (most recent last)
-    return html.Ul([html.Li(msg) for msg in copilot_logs])
 
 # -------------------- Run the Server --------------------
 if __name__ == '__main__':
