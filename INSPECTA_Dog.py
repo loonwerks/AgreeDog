@@ -818,12 +818,13 @@ def refresh_prompt_callback(n_clicks):
 
     # Derive the counterexample folder from the CLI argument by removing the file name.
     if cli_config["counter_example"]:
+        log_message("Counterexamples folder exists","info")
         counterexample_dir = os.path.dirname(cli_config["counter_example"])
     else:
         counterexample_dir = "counter_examples"
 
     if not os.path.exists(counterexample_dir):
-        message = f"Counterexample folder not found: {counterexample_dir}"
+        message = f"Counterexamples folder not found"
         return dash.no_update, log_message(message, "warning")
 
     # List only files in the folder.
