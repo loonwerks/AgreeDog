@@ -33,6 +33,7 @@ from git_actions import *
 # A global list to store log messages.
 copilot_logs = []
 
+
 def log_message(msg, level="info"):
     """
     Appends a message with timestamp and level (INFO, WARNING, ERROR) to the global log list.
@@ -43,6 +44,7 @@ def log_message(msg, level="info"):
     print(full_msg)
     copilot_logs.append(full_msg)
     return full_msg  # also return the message for callback outputs
+
 
 # -------------------- Ensure necessary directories exist --------------------
 directories = ["conversation_history", "temp_history", "shared_history", "counter_examples", "proof_analysis"]
@@ -70,6 +72,8 @@ else:
 
 # -------------------- Process sys-requirement.txt File --------------------
 requirements_content = ""
+
+
 def req_content():
     global requirements_content
     if cli_config["requirement_file"]:
@@ -88,6 +92,8 @@ def req_content():
     else:
         log_message("No sys_requirement.txt file provided.", "warning")
         return "No sys_requirement.txt file provided."
+
+
 req_content()
 requirements_file_content = requirements_content
 
@@ -101,13 +107,16 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 refresh_prompt_button = dbc.Button(
     [
         html.I(className="fa fa-sync", style={"margin-right": "5px"}),
-        "Refresh Prompt"
+        "Refresh Files & Update Prompt"
     ],
     id="refresh-prompt",
     color="warning",
     style={"margin-left": "5px"}
 )
-refresh_prompt_status = html.Div(id='refresh-prompt-status', style={"margin-top": "10px", "color": "green"})
+refresh_prompt_status = html.Div(
+    id='refresh-prompt-status',
+    style={"margin-top": "10px", "color": "green", "font-weight": "bold"}
+)
 
 # Pre-existing UI components
 gear_button = dbc.Button(
@@ -144,6 +153,13 @@ apply_button = dbc.Button(
 token_display = html.Div(id='token-count', style={"margin-top": "20px"})
 timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
+# Add informational tooltip for the refresh button
+refresh_tooltip = dbc.Tooltip(
+    "Click to reload files from command line and update the prompt",
+    target="refresh-prompt",
+    placement="top"
+)
+
 # -------------------- Dash App Layout --------------------
 app.layout = dbc.Container([
     # Header with dog image & text on the left, Collins on the right
@@ -171,7 +187,8 @@ app.layout = dbc.Container([
                 id="collins-logo",
                 style={"height": "70px", "width": "250px", "vertical-align": "middle"}
             )
-        ], style={"display": "flex", "align-items": "center", "justify-content": "space-between", "margin-bottom": "5px"})
+        ], style={"display": "flex", "align-items": "center", "justify-content": "space-between",
+                  "margin-bottom": "5px"})
     ]),
     # Settings Menu
     html.Div(
@@ -181,7 +198,8 @@ app.layout = dbc.Container([
             dcc.RadioItems(
                 id='system-message-choice',
                 options=[
-                    {"label": "JKind SMTSolvers AI selector", "value": "Enable JKind SMTSolvers selector", "disabled": True},
+                    {"label": "JKind SMTSolvers AI selector", "value": "Enable JKind SMTSolvers selector",
+                     "disabled": True},
                     {"label": "AgreeDog System Message", "value": "AgreeDog"}
                 ],
                 value="AgreeDog"
@@ -290,8 +308,9 @@ app.layout = dbc.Container([
             style={"margin-right": "2px"}
         ),
         gear_button,
-        refresh_prompt_button,  # NEW Refresh Prompt button
+        refresh_prompt_button,  # Refresh Prompt button
         refresh_prompt_status,  # Status message for refresh prompt
+        refresh_tooltip,  # Tooltip for refresh button
         html.Div(
             id='upload-folder-div',
             style={"display": "none", "margin-left": "2px"},
@@ -359,7 +378,7 @@ app.layout = dbc.Container([
     ], id="shutdown-modal", is_open=False),
     html.Div(id='shutdown-status', style={"margin-top": "10px", "color": "red"}),
     html.Div(id='apply-status', style={"margin-top": "10px", "color": "green"}),
-    # Hidden global store for the context prompt (NEW)
+    # Hidden global store for the context prompt
     dcc.Store(id="global-context-prompt", data=""),
     # -------------------- New Logging Section --------------------
     html.Hr(),
@@ -385,7 +404,161 @@ start_time = None
 elapsed_time = timedelta(0)
 formatted_elapsed_time = "00:00:00.00"
 
-# -------------------- Existing Callbacks --------------------
+
+# -------------------- Helper functions for Counterexample Handling --------------------
+def get_latest_counterexample(counterexample_dir):
+    """
+    Scans the counterexample directory for the latest file.
+
+    Args:
+        counterexample_dir: Directory to scan for counterexample files
+
+    Returns:
+        tuple: (latest_file_path, latest_file_name) or (None, None) if no files found
+    """
+    if not os.path.exists(counterexample_dir):
+        log_message(f"Counterexample directory not found: {counterexample_dir}", "warning")
+        return None, None
+
+    # Get all files in the directory
+    files = [f for f in os.listdir(counterexample_dir)
+             if os.path.isfile(os.path.join(counterexample_dir, f))]
+
+    if not files:
+        log_message(f"No counterexample files found in {counterexample_dir}", "info")
+        return None, None
+
+    # Sort files by modification time to get the newest file
+    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
+    latest_file = files_sorted[-1]
+    latest_file_path = os.path.join(counterexample_dir, latest_file)
+
+    return latest_file_path, latest_file
+
+
+def format_no_counterexample_prompt(aadl_content, requirements_content=None):
+    """
+    Creates a prompt for when no counterexample is available.
+
+    Args:
+        aadl_content: Content of the AADL model file
+        requirements_content: Optional requirements content
+
+    Returns:
+        str: Formatted prompt
+    """
+    if not aadl_content:
+        return ""
+
+    prompt_parts = []
+
+    # Add requirements if available
+    if requirements_content:
+        prompt_parts.append(
+            "When analyzing and modifying the code, consider these requirements:\n"
+            f"{requirements_content}\n"
+        )
+
+    # Add AADL model content
+    prompt_parts.append(
+        "No counterexample is available. Please analyze the following AADL model:\n"
+        f"{aadl_content}\n\n"
+        "Please help with one of the following:\n"
+        "1. Identify potential issues in the model that could lead to verification failures\n"
+        "2. Suggest improvements to make the model more robust\n"
+        "3. Explain how the AGREE verification process works for this type of model\n"
+        "If you need to provide modified code, please enclose it in triple backticks (```)."
+    )
+
+    return "\n".join(prompt_parts)
+
+
+def format_counterexample_prompt(aadl_content, counterexample_content, requirements_content=None):
+    """
+    Creates a prompt that includes a counterexample.
+
+    Args:
+        aadl_content: Content of the AADL model file
+        counterexample_content: Content of the counterexample file
+        requirements_content: Optional requirements content
+
+    Returns:
+        str: Formatted prompt
+    """
+    prompt_parts = []
+
+    # Add requirements if available
+    if requirements_content:
+        prompt_parts.append(
+            "When analyzing and modifying the code, consider these requirements:\n"
+            f"{requirements_content}\n"
+        )
+
+    # Add AADL model content
+    prompt_parts.append(
+        "Analyze the following AADL model:\n"
+        f"{aadl_content}\n"
+    )
+
+    # Add counterexample content
+    prompt_parts.append(
+        "AGREE generated the following counterexample which indicates a verification failure:\n"
+        f"{counterexample_content}\n\n"
+        "Please explain:\n"
+        "1. Why the verification failed (which property was violated and why)\n"
+        "2. How to fix the model to address this issue\n"
+        "Provide the complete modified AADL code between triple backticks (```)."
+    )
+
+    return "\n".join(prompt_parts)
+
+
+def construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content):
+    """
+    Constructs a comprehensive prompt with AADL model, counterexample, and requirements.
+    """
+    prompt_parts = []
+
+    # Add requirements section if available
+    if requirements_content:
+        prompt_parts.append(
+            "When analyzing and modifying the code, consider these requirements:\n"
+            f"{requirements_content}\n"
+        )
+
+    # Add AADL model
+    if aadl_content:
+        prompt_parts.append(
+            "Analyze the following AADL model:\n"
+            f"{aadl_content}\n"
+        )
+
+    # Add counterexample
+    if counterexample_content:
+        prompt_parts.append(
+            "AGREE generated the following counterexample:\n"
+            f"{counterexample_content}\n"
+        )
+
+    # Add request
+    prompt_parts.append(
+        "Please explain why the verification failed and suggest modifications to fix the issues. "
+        "Write the modified AADL code between ``` ```."
+    )
+
+    return "\n".join(prompt_parts)
+
+
+# -------------------- Callbacks --------------------
+# Callback for Log Display
+@app.callback(
+    Output('log-section', 'children'),
+    Input('log-update-interval', 'n_intervals')
+)
+def update_log_display(n):
+    return html.Ul([html.Li(msg) for msg in copilot_logs])
+
+
 @app.callback(
     Output('system-message-menu', 'style'),
     Input('gear-button', 'n_clicks'),
@@ -401,6 +574,7 @@ def toggle_system_message_menu(gear_clicks, style):
         style["display"] = "none"
     return style
 
+
 @app.callback(
     Output('upload-folder-div', 'style'),
     Input('include-upload-folder', 'value'),
@@ -410,6 +584,7 @@ def toggle_upload_folder_div(include_upload):
     if include_upload == "yes":
         return {"display": "block", "margin-left": "10px"}
     return {"display": "none"}
+
 
 @app.callback(
     Output('initial-file-div', 'style'),
@@ -421,6 +596,7 @@ def toggle_initial_file_div(include_upload):
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
+
 @app.callback(
     Output('git-commit-div', 'style'),
     Input('enable-git-push', 'value'),
@@ -431,7 +607,181 @@ def toggle_git_commit_div(enable_git_push):
         return {"display": "block", "margin-top": "10px"}
     return {"display": "none"}
 
-# -------------------- Modified Callback for App Interactions --------------------
+
+# Auto-refresh on load callback
+@app.callback(
+    Output('refresh-prompt', 'n_clicks'),
+    Input('refresh-prompt', 'id'),
+    prevent_initial_call=False
+)
+def auto_refresh_on_load(id_value):
+    # This will trigger the refresh_prompt_callback once when the app loads
+    return 1
+
+
+# Update the input placeholder based on context availability
+@app.callback(
+    Output('user-input', 'placeholder'),
+    Input('global-context-prompt', 'data')
+)
+def update_placeholder(global_context_prompt):
+    if global_context_prompt:
+        return "Context from files loaded. Add any additional questions or requests here..."
+    else:
+        return "Enter your context..."
+
+
+# Update submit button text based on context status
+@app.callback(
+    Output('submit-button', 'children'),
+    Input('global-context-prompt', 'data')
+)
+def update_submit_button(global_context_prompt):
+    if global_context_prompt:
+        return [
+            html.I(className="fa fa-paper-plane", style={"margin-right": "5px"}),
+            "Submit with Context"
+        ]
+    else:
+        return [
+            html.I(className="fa fa-paper-plane", style={"margin-right": "5px"}),
+            "Submit"
+        ]
+
+
+# -------------------- Enhanced Refresh Prompt Callback --------------------
+@app.callback(
+    [Output('global-context-prompt', 'data'),
+     Output('refresh-prompt-status', 'children')],
+    Input('refresh-prompt', 'n_clicks')
+)
+def refresh_prompt_callback(n_clicks):
+    if not n_clicks:
+        raise dash.exceptions.PreventUpdate
+
+    # Track the latest counterexample file
+    global last_counterexample_file
+
+    # Re-read all files provided via command line
+    aadl_content = ""
+    requirements_content = ""
+    counterexample_content = ""
+
+    # Get the AADL model content
+    if cli_config["start_file"]:
+        working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
+        start_file_path = os.path.join(working_dir, cli_config["start_file"])
+        if os.path.exists(start_file_path):
+            aadl_content = read_start_file_content(start_file_path)
+            log_message(f"Re-read AADL model file: {start_file_path}", "info")
+        else:
+            log_message(f"AADL model file not found: {start_file_path}", "warning")
+
+    # Get the requirements content
+    if cli_config["requirement_file"]:
+        if os.path.exists(cli_config["requirement_file"]):
+            requirements_content = read_requirements_file(cli_config["requirement_file"])
+            log_message(f"Re-read requirements file: {cli_config['requirement_file']}", "info")
+        else:
+            log_message(f"Requirements file not found: {cli_config['requirement_file']}", "warning")
+
+    # Determine counterexample directory
+    if cli_config["counter_example"]:
+        counterexample_dir = os.path.dirname(cli_config["counter_example"])
+    else:
+        counterexample_dir = "counter_examples"
+
+    if not os.path.exists(counterexample_dir):
+        message = f"Counterexamples folder not found: {counterexample_dir}"
+        log_message(message, "warning")
+
+        # Create a default prompt with just the AADL content
+        if aadl_content:
+            new_prompt = (
+                "No counterexample detected. "
+                "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
+                f"{aadl_content}"
+            )
+            if requirements_content:
+                new_prompt = (
+                                 "When analyzing and modifying the code, consider these requirements:\n"
+                                 f"{requirements_content}\n\n"
+                             ) + new_prompt
+
+            return new_prompt, "Prompt updated with latest AADL model, but no counterexample found."
+        else:
+            return "", "Failed to update prompt: Neither AADL model nor counterexample found."
+
+    # Check for counterexample files
+    files = [f for f in os.listdir(counterexample_dir)
+             if os.path.isfile(os.path.join(counterexample_dir, f))]
+
+    if not files:
+        # No counterexample files found
+        if aadl_content:
+            new_prompt = (
+                "No counterexample detected. "
+                "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
+                f"{aadl_content}"
+            )
+            if requirements_content:
+                new_prompt = (
+                                 "When analyzing and modifying the code, consider these requirements:\n"
+                                 f"{requirements_content}\n\n"
+                             ) + new_prompt
+
+            return new_prompt, log_message("Updated prompt with AADL model, but no counterexample found.", "info")
+        else:
+            return "", log_message("Failed to update prompt: Neither AADL model nor counterexample found.", "warning")
+
+    # Sort files by modification time to get the newest file
+    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
+    latest_file = files_sorted[-1]
+
+    # Check if this is a new counterexample file
+    new_counterexample_detected = last_counterexample_file != latest_file
+
+    if new_counterexample_detected:
+        # Update the global tracker
+        last_counterexample_file = latest_file
+
+        # Read the counterexample content
+        counterexample_path = os.path.join(counterexample_dir, latest_file)
+        counterexample_content = read_counter_example_file(counterexample_path)
+        log_message(f"New counterexample detected: {latest_file}", "info")
+
+        # Construct a new prompt with all updated content
+        new_prompt = construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content)
+        status = f"New counterexample file detected: {latest_file}. Prompt updated with latest files."
+    else:
+        # No new counterexample, but still update with latest AADL content
+        if aadl_content:
+            if cli_config["counter_example"] and os.path.exists(cli_config["counter_example"]):
+                # Use the existing counterexample
+                counterexample_content = read_counter_example_file(cli_config["counter_example"])
+                new_prompt = construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content)
+                status = "No new counterexample detected. Prompt updated with latest AADL model and existing counterexample."
+            else:
+                # No counterexample to use
+                new_prompt = (
+                    "No new counterexample detected. "
+                    "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
+                    f"{aadl_content}"
+                )
+                if requirements_content:
+                    new_prompt = (
+                                     "When analyzing and modifying the code, consider these requirements:\n"
+                                     f"{requirements_content}\n\n"
+                                 ) + new_prompt
+                status = "No new counterexample detected. Prompt updated with latest AADL model only."
+        else:
+            new_prompt = ""
+            status = "Failed to update prompt: AADL model not found or empty."
+
+    return new_prompt, log_message(status, "info")
+
+
+# -------------------- Enhanced handle_app_interactions Callback --------------------
 @app.callback(
     [
         Output('conversation-history', 'children'),
@@ -455,7 +805,7 @@ def toggle_git_commit_div(enable_git_push):
         State('initial-file', 'value'),
         State('include-requirements-chain', 'value'),
         State('include-upload-folder', 'value'),
-        State('global-context-prompt', 'data')  # NEW state for global context prompt
+        State('global-context-prompt', 'data')  # Global context prompt state
     ]
 )
 def handle_app_interactions(confirm_n_clicks,
@@ -482,15 +832,12 @@ def handle_app_interactions(confirm_n_clicks,
 
     conversation_history = json.loads(conversation_history_json)
 
-    # If the user has provided input and we have a global prompt, prepend it.
-    if triggered_id == 'submit-button' and user_input:
-        if global_context_prompt and not user_input.startswith(global_context_prompt):
-            user_input = global_context_prompt + "\n" + user_input
-
+    # Handle system message confirmation
     if triggered_id == 'confirm-system-message-button' and confirm_n_clicks is not None:
         ch_json, resp, usr_val, tkn_count, tmr_display = set_system_message(conversation_history, system_message_choice)
         return ch_json, resp, usr_val, tkn_count, tmr_display, context_added
 
+    # Handle submission with the submit button
     elif triggered_id == 'submit-button' and submit_n_clicks is not None:
         if start_time is None:
             start_time = datetime.now()
@@ -505,11 +852,29 @@ def handle_app_interactions(confirm_n_clicks,
                 context_added
             )
 
+        # Initialize conversation history if empty
         if not conversation_history:
             conversation_history = [
                 {'role': 'system', 'content': INSPECTA_dog_system_msgs.AGREE_dog_sys_msg}
             ]
             context_added = "false"
+
+        # Prepare the user input with global context prompt if available
+        effective_user_input = user_input or ""
+
+        # If we have a global context prompt, use it as the base for the user's input
+        if global_context_prompt and not effective_user_input.startswith(global_context_prompt):
+            if effective_user_input:
+                # Combine global prompt with user's additional input
+                effective_user_input = (
+                    f"{global_context_prompt}\n\n"
+                    f"Additional request: {effective_user_input}"
+                )
+                log_message("Combined global context prompt with user's additional input", "info")
+            else:
+                # Just use the global prompt
+                effective_user_input = global_context_prompt
+                log_message("Using global context prompt as there was no additional user input", "info")
 
         upload_directory = get_resource_path("uploaded_dir")
         subdirectories = [
@@ -536,10 +901,10 @@ def handle_app_interactions(confirm_n_clicks,
             target_directory = subdirectories[0] if subdirectories else ""
             log_message(f"Using subdirectory {target_directory} as target directory.", "info")
 
-        project_files = read_project_files(target_directory)
-
-        if context_added == "false":
-            if (include_requirements_chain == "yes" and initial_file and include_upload_folder == "no"):
+        # If we're still in manual context mode, process it
+        if context_added == "false" and include_upload_folder == "yes":
+            project_files = read_project_files(target_directory)
+            if (include_requirements_chain == "yes" and initial_file):
                 initial_file = remove_file_ext_from_cmd_like_ui(initial_file)
                 file_context = concatenate_imports(
                     initial_file,
@@ -553,10 +918,10 @@ def handle_app_interactions(confirm_n_clicks,
                     cex_path = cli_config["counter_example"]
                     cex = read_counter_example_file(cex_path)
                     prompt = set_prompt(file_context, cex)
-                    user_input = f"{prompt}\n{user_input}"
+                    effective_user_input = f"{prompt}\n{effective_user_input}"
                 context_added = "true"
-
-            elif (include_requirements_chain == "no" and initial_file and include_upload_folder == "no" and context_added == "false" and cli_config["counter_example"] is not None):
+            elif (include_requirements_chain == "no" and initial_file and context_added == "false" and cli_config[
+                "counter_example"] is not None):
                 cex_path = cli_config["counter_example"]
                 cex = read_counter_example_file(cex_path)
                 start_file_with_ext = cli_config["start_file"]
@@ -564,28 +929,31 @@ def handle_app_interactions(confirm_n_clicks,
                 start_file_path = os.path.join(working_dir, start_file_with_ext)
                 start_file_content = read_start_file_content(start_file_path)
                 prompt = set_prompt(start_file_content, cex)
-                user_input = f"{prompt}\n{user_input}"
+                effective_user_input = f"{prompt}\n{effective_user_input}"
                 context_added = "true"
 
-            elif (include_requirements_chain == "no" and initial_file and include_upload_folder == "yes"):
-                pass
-
-        if requirements_file_content:
+        if requirements_file_content and not global_context_prompt:
             requirements_hint = (
-                "When you modify the code or try to write the fixed code, "
-                "consider the following requirements and make sure your modifications "
-                "don't break them:\n" + requirements_file_content
+                    "When you modify the code or try to write the fixed code, "
+                    "consider the following requirements and make sure your modifications "
+                    "don't break them:\n" + requirements_file_content
             )
-            user_input = f"\n{user_input}"
+            effective_user_input = f"\n{effective_user_input}"
             log_message("Integrated sys_requirements.txt content into user input.", "info")
 
-        conversation_history.append({'role': 'user', 'content': user_input})
+        # Add the effective user input to the conversation history
+        conversation_history.append({'role': 'user', 'content': effective_user_input})
+
+        # Get completion from the model
         response_obj = get_completion_from_messages(conversation_history, model=model_choice)
         response = response_obj.choices[0].message["content"]
         tokens_used = response_obj['usage']['total_tokens']
 
+        # Add the assistant's response to the conversation history
         conversation_history.append({'role': 'assistant', 'content': response})
         save_conversation_history_to_file(conversation_history)
+
+        # Format the display text
         display_text = format_display_text(conversation_history, display_mode)
         warning = token_warning(model_choice, tokens_used)
         total_time_display = total_timedisplay(start_time, time_frames, total_api_time)
@@ -593,12 +961,13 @@ def handle_app_interactions(confirm_n_clicks,
         return (
             json.dumps(conversation_history),
             display_text,
-            "",
-            f"Tokens used : {tokens_used}" + warning,
+            "",  # Clear the input field
+            f"Tokens used: {tokens_used}" + warning,
             total_time_display,
-            context_added
+            "true"  # Mark context as added
         )
 
+    # Default return when no action is triggered
     return (
         conversation_history_json,
         "",
@@ -607,6 +976,7 @@ def handle_app_interactions(confirm_n_clicks,
         f"Elapsed Time: {formatted_elapsed_time}",
         context_added
     )
+
 
 # -------------------- Callback for Apply Modifications (Insert) --------------------
 @app.callback(
@@ -621,7 +991,7 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
         raise dash.exceptions.PreventUpdate
 
     if not conversation_history_json:
-        log_message("No conversation history to parse.","warning")
+        log_message("No conversation history to parse.", "warning")
         return "No conversation history to parse."
 
     conversation_history = json.loads(conversation_history_json)
@@ -671,6 +1041,7 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
     )
     return log_message(success_message, "info")
 
+
 @app.callback(
     Output("shutdown-modal", "is_open"),
     [
@@ -693,6 +1064,7 @@ def toggle_modal(shutdown_click, confirm_click, cancel_click, is_open):
         return False
     return is_open
 
+
 @app.callback(
     Output('shutdown-status', 'children'),
     Input('confirm-shutdown', 'n_clicks'),
@@ -702,11 +1074,12 @@ def shutdown_server(n_clicks):
     if n_clicks:
         def force_shutdown():
             os._exit(0)
+
         thread = threading.Thread(target=force_shutdown)
         thread.start()
-        #log_message("Server is shutting down immediately...","info")
         return "Server is shutting down immediately..."
-    return  log_message("Server is shutting down immediately...", "info") #""
+    return log_message("Server is shutting down immediately...", "info")
+
 
 @app.callback(
     Output('copy-status', 'children'),
@@ -737,6 +1110,7 @@ def copy_conversation_history(n_clicks, conversation_history_json):
     message = f"Successfully copied to {destination_file}"
     return log_message(message, "info")
 
+
 @app.callback(
     Output('upload-status', 'children'),
     [Input('upload-folder', 'contents')],
@@ -763,28 +1137,8 @@ def handle_upload(contents, filename, include_upload):
         zip_ref.extractall(upload_directory)
 
     log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info")
-    return log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info") #"Folder uploaded and extracted successfully!"
+    return log_message(f"Folder '{filename}' uploaded and extracted successfully.", "info")
 
-def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
-    global total_api_time
-    start_time_local = time.time()
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-    )
-    end_time_local = time.time()
-    api_call_time = end_time_local - start_time_local
-    total_api_time += api_call_time
-    return response
-
-def save_conversation_history_to_file(conversation_history, dir_name='conversation_history'):
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    file_name = f"{dir_name}/conversation_history.json"
-    json_string = json.dumps(conversation_history, indent=4)
-    with open(file_name, 'w') as file:
-        file.write(json_string)
 
 @app.callback(
     Output('push-status', 'children'),
@@ -806,92 +1160,31 @@ def commit_and_push(n_clicks, commit_message):
             log_message(error_message, "error")
             return error_message
 
-# -------------------- NEW Callback for Refresh Prompt --------------------
-@app.callback(
-    [Output('global-context-prompt', 'data'),
-     Output('refresh-prompt-status', 'children')],
-    Input('refresh-prompt', 'n_clicks')
-)
-def refresh_prompt_callback(n_clicks):
-    if not n_clicks:
-        raise dash.exceptions.PreventUpdate
-
-    # Derive the counterexample folder from the CLI argument by removing the file name.
-    if cli_config["counter_example"]:
-        log_message("Counterexamples folder exists","info")
-        counterexample_dir = os.path.dirname(cli_config["counter_example"])
-    else:
-        counterexample_dir = "counter_examples"
-
-    if not os.path.exists(counterexample_dir):
-        message = f"Counterexamples folder not found"
-        return dash.no_update, log_message(message, "warning")
-
-    # List only files in the folder.
-    files = [f for f in os.listdir(counterexample_dir)
-             if os.path.isfile(os.path.join(counterexample_dir, f))]
-    if not files and cli_config["start_file"]:
-        working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
-        start_file_path = os.path.join(working_dir, cli_config["start_file"])
-        start_file_content = read_start_file_content(start_file_path)
-        new_prompt = (
-            "No new counterexample detected in counterexample folder. "
-            "Answer any question or request that you find in my Addle file below"
-            f"{start_file_content}. "
-            "And explain the modification you made."
-        )
-        return new_prompt, log_message("No counterexample files found. Default prompt set.","warning")
-
-    # Sort files by modification time to get the newest file.
-    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
-    latest_file = files_sorted[-1]
-
-    global last_counterexample_file
-    if last_counterexample_file != latest_file:
-        last_counterexample_file = latest_file
-        with open(os.path.join(counterexample_dir, latest_file), 'r') as f:
-            cex_content = f.read()
-        # For the AADL content, try reading the start file if provided.
-        if cli_config["start_file"]:
-            working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
-            start_file_path = os.path.join(working_dir, cli_config["start_file"])
-            aadl_content = read_start_file_content(start_file_path)
-        else:
-            aadl_content = ""
-        new_prompt = set_prompt(aadl_content, cex_content)
-        status = f"New counterexample file detected: {latest_file}. Prompt updated."
-    elif cli_config["start_file"]:
-        working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
-        start_file_path = os.path.join(working_dir, cli_config["start_file"])
-        aadl_content = read_start_file_content(start_file_path)
-        new_prompt = (
-            "No new counterexample detected in counterexample folder. "
-            "Answer any question or request that you find in my Addle file. below: "
-            f"\n{aadl_content}\n"
-            "And explain the modification you made."
-        )
-        #log_message("updated prompt with modified aadl file no counterexample file detected","info")
-        #status = "updated aadle file and no new counterexample file detected. Default prompt set."
-        return new_prompt, log_message("updated prompt with modified aadl file no counterexample file detected","info") #status
-    else:
-        new_prompt = (
-            "No new counterexample detected in counterexample folder. "
-            "Answer any question or request that you find in my Addle file. "
-            "And explain the modification you made."
-        )
-        status = "No new counterexample file detected. Default prompt set."
-        log_message(status, "info")
-    return new_prompt, log_message(status, "info")#status
-
-# -------------------- Callback for Log Display --------------------
-@app.callback(
-    Output('log-section', 'children'),
-    Input('log-update-interval', 'n_intervals')
-)
-def update_log_display(n):
-    return html.Ul([html.Li(msg) for msg in copilot_logs])
 
 # -------------------- Utility Functions --------------------
+def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
+    global total_api_time
+    start_time_local = time.time()
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+    )
+    end_time_local = time.time()
+    api_call_time = end_time_local - start_time_local
+    total_api_time += api_call_time
+    return response
+
+
+def save_conversation_history_to_file(conversation_history, dir_name='conversation_history'):
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    file_name = f"{dir_name}/conversation_history.json"
+    json_string = json.dumps(conversation_history, indent=4)
+    with open(file_name, 'w') as file:
+        file.write(json_string)
+
+
 def read_requirements_file(file_path):
     if not os.path.isfile(file_path):
         warnings.warn(
@@ -901,6 +1194,7 @@ def read_requirements_file(file_path):
         return ""
     result = read_generic_file_content(file_path)
     return result
+
 
 def get_requirements_content():
     requirements_content_local = " "
@@ -927,14 +1221,16 @@ def get_requirements_content():
 
     return requirements_content_local
 
+
 def construct_requirements_section(requirements_file_cont):
     if requirements_file_cont:
         return (
-            "When you modify the code or try to write the fixed code consider "
-            "the following requirements and make sure your modifications don't break them:\n"
-            + requirements_file_cont
+                "When you modify the code or try to write the fixed code consider "
+                "the following requirements and make sure your modifications don't break them:\n"
+                + requirements_file_cont
         )
     return ""
+
 
 def construct_prompt(aadl_content, counter_example_content, requirements_section):
     if cli_config["counter_example"] is None:
@@ -960,10 +1256,12 @@ Can you explain why and how to fix it?
 Write the modified AADL code between ``` ```
 """
 
+
 def set_prompt(aadl_content, counter_example_content):
     requirements_content_local = req_content()
     requirements_section = construct_requirements_section(requirements_content_local)
     return construct_prompt(aadl_content, counter_example_content, requirements_section)
+
 
 def remove_file_ext_from_cmd_like_ui(initial_file):
     if cli_config["start_file"] is not None:
@@ -973,11 +1271,13 @@ def remove_file_ext_from_cmd_like_ui(initial_file):
     else:
         return initial_file
 
+
 def token_warning(model_choice, tokens_used):
     warning = ""
     if 7000 <= tokens_used < 8000 and model_choice == "gpt-4-0613":
         warning = " Warning: Tokens used are higher than 7000. If you are using GPT-4 8k, consider switching."
     return warning
+
 
 def total_timedisplay(start_time_val, time_frames_local, total_api_time_val):
     global elapsed_time, formatted_elapsed_time
@@ -990,6 +1290,7 @@ def total_timedisplay(start_time_val, time_frames_local, total_api_time_val):
     )
     return total_time_display
 
+
 def set_system_message(conversation_history, system_message_choice):
     if not conversation_history:
         conversation_history = [{'role': 'system', 'content': ''}]
@@ -999,26 +1300,28 @@ def set_system_message(conversation_history, system_message_choice):
         conversation_history[0]['content'] = INSPECTA_dog_system_msgs.AGREE_dog_sys_msg
     return json.dumps(conversation_history), "", "", "", ""
 
+
 def reset_timer_variables():
     global start_time, elapsed_time, formatted_elapsed_time
     start_time = None
     elapsed_time = timedelta(0)
     formatted_elapsed_time = "00:00:00.00"
 
+
 def read_start_file_content(file_path):
     try:
         with open(file_path, 'r') as f:
             file_content = f.read()
-        #log_message(f"file {file_path} is read", "info")
         return file_content.strip()
     except FileNotFoundError:
         log_message(f"File not found: {file_path}", "error")
         return ""
 
+
 def read_generic_file_content(file_path):
     with open(file_path, 'r') as f:
-        #log_message(f"file {file_path} is read","info")
         return f.read()
+
 
 def handle_requires(file_path, project_files, files_to_check, processed_files):
     with open(file_path, 'r') as f:
@@ -1029,11 +1332,12 @@ def handle_requires(file_path, project_files, files_to_check, processed_files):
                 required_packages = [pkg.strip() for pkg in required_packages_line.split(',')]
                 for required_pkg in required_packages:
                     if (
-                        required_pkg in project_files
-                        and required_pkg not in processed_files
-                        and required_pkg not in files_to_check
+                            required_pkg in project_files
+                            and required_pkg not in processed_files
+                            and required_pkg not in files_to_check
                     ):
                         files_to_check.append(required_pkg)
+
 
 def read_project_files(directory):
     if cli_config["working_dir"] is not None:
@@ -1064,6 +1368,7 @@ def read_project_files(directory):
                 project_files.append(filename[:-5])
     return project_files
 
+
 def concatenate_imports(start_file, project_files, folder_path,
                         include_requirements_chain, include_upload_folder,
                         context_added):
@@ -1078,7 +1383,7 @@ def concatenate_imports(start_file, project_files, folder_path,
         processed_files.add(current_file)
 
         if (include_requirements_chain == "yes" and start_file and
-            context_added == "false" and include_upload_folder == "no"):
+                context_added == "false" and include_upload_folder == "no"):
             file_path = os.path.join(folder_path, current_file + ".aadl")
         elif (include_requirements_chain == "yes" and start_file and
               context_added == "true" and include_upload_folder == "yes"):
@@ -1098,6 +1403,7 @@ def concatenate_imports(start_file, project_files, folder_path,
 
         handle_requires(file_path, project_files, files_to_check, processed_files)
     return context
+
 
 def highlight_keywords(text):
     keywords = [
@@ -1135,6 +1441,7 @@ def highlight_keywords(text):
             break
     return elements
 
+
 def format_display_text(conversation_history, display_mode):
     if display_mode == "full":
         display_elements = []
@@ -1161,6 +1468,7 @@ def format_display_text(conversation_history, display_mode):
             label = html.Span("AGREE-Dog:", style={'color': 'red'})
         highlighted_last = highlight_keywords(" " + last_message['content'] + "\n\n")
         return [label] + highlighted_last
+
 
 # -------------------- Run the Server --------------------
 if __name__ == '__main__':
