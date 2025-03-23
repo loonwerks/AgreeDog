@@ -10,7 +10,7 @@ gedit
 gunicorn>=22.0.0
 matplotlib==3.5.1
 scipy==1.8.1
-dask==2021.10.0
+dask==2025.3.0
 dataclasses-json==0.6.6
 pandas==1.3.4
 pandas-profiling==3.6.6
@@ -18,4 +18,5 @@ tiktoken==0.4.0
 plotly==5.15.0
 pyOpenSSL
 scikit-learn>=1.5.0
+source /home/amertahat/llm4code/venv/bin/activate
 
