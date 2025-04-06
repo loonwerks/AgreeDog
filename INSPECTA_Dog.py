@@ -103,7 +103,8 @@ last_counterexample_file = None
 # -------------------- Dash App Setup --------------------
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-# NEW Refresh Prompt button, status display, and a hidden Store for the prompt.
+# -------------------- Button Components with Tooltips --------------------
+# Refresh Prompt button and tooltip
 refresh_prompt_button = dbc.Button(
     [
         html.I(className="fa fa-sync", style={"margin-right": "5px"}),
@@ -113,12 +114,17 @@ refresh_prompt_button = dbc.Button(
     color="warning",
     style={"margin-left": "5px"}
 )
+refresh_tooltip = dbc.Tooltip(
+    "Click to reload files from command line and update the prompt",
+    target="refresh-prompt",
+    placement="top"
+)
 refresh_prompt_status = html.Div(
     id='refresh-prompt-status',
     style={"margin-top": "10px", "color": "green", "font-weight": "bold"}
 )
 
-# Pre-existing UI components
+# Gear button and tooltip
 gear_button = dbc.Button(
     [
         html.I(className="fa fa-cog", style={"margin-right": "5px"})
@@ -127,7 +133,13 @@ gear_button = dbc.Button(
     color="secondary",
     style={"display": "inline-block", "vertical-align": "middle"}
 )
+gear_tooltip = dbc.Tooltip(
+    "Click to toggle system message menu",
+    target="gear-button",
+    placement="top"
+)
 
+# Shutdown button and tooltip
 shutdown_button = dbc.Button(
     [
         html.I(className="fa fa-power-off", style={"margin-right": "5px"}),
@@ -138,7 +150,13 @@ shutdown_button = dbc.Button(
     className="ml-3",
     style={"display": "inline-block", "vertical-align": "middle"}
 )
+shutdown_tooltip = dbc.Tooltip(
+    "Click to shutdown the server",
+    target="shutdown-button",
+    placement="top"
+)
 
+# Apply (Insert) button and tooltip
 apply_button = dbc.Button(
     [
         html.I(className="fa fa-check-circle", style={"margin-right": "5px"}),
@@ -148,17 +166,79 @@ apply_button = dbc.Button(
     color="secondary",
     style={"margin-left": "5px"}
 )
-
-# Other UI components
-token_display = html.Div(id='token-count', style={"margin-top": "20px"})
-timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
-
-# Add informational tooltip for the refresh button
-refresh_tooltip = dbc.Tooltip(
-    "Click to reload files from command line and update the prompt",
-    target="refresh-prompt",
+apply_tooltip = dbc.Tooltip(
+    "Click to apply modifications",
+    target="apply-modifications",
     placement="top"
 )
+
+# Submit button and tooltip
+submit_button = dbc.Button(
+    [
+        html.I(className="fa fa-paper-plane", style={"margin-right": "2px"}),
+        "Submit"
+    ],
+    id='submit-button',
+    color="primary",
+    style={"margin-right": "2px"}
+)
+submit_tooltip = dbc.Tooltip(
+    "Click to submit your input",
+    target="submit-button",
+    placement="top"
+)
+
+# Copy (Save) button and tooltip
+copy_button = dbc.Button(
+    [
+        html.I(className="fa fa-save", style={"margin-right": "2px"}),
+        "Save"
+    ],
+    id='copy-button',
+    color="secondary",
+    style={"margin-right": "2px"}
+)
+copy_tooltip = dbc.Tooltip(
+    "Click to copy conversation history",
+    target="copy-button",
+    placement="top"
+)
+
+# Upload Folder button (inside dcc.Upload) and tooltip.
+# Assign an id ("upload-button") to the inner button for targeting.
+upload_button = dbc.Button(
+    [
+        html.I(className="fa fa-upload", style={"margin-right": "2px"}),
+        "Upload Folder"
+    ],
+    id="upload-button",
+    color="secondary"
+)
+upload_tooltip = dbc.Tooltip(
+    "Click to upload a folder",
+    target="upload-button",
+    placement="top"
+)
+
+# Git Commit and Push button and tooltip
+git_commit_push_button = dbc.Button(
+    [
+        html.I(className="fab fa-github", style={"margin-right": "5px"}),
+        "Git Commit and Push"
+    ],
+    id='git-commit-push',
+    color="success",
+    className="mr-1"
+)
+git_tooltip = dbc.Tooltip(
+    "Click to commit and push changes",
+    target="git-commit-push",
+    placement="top"
+)
+
+# -------------------- Other UI Components --------------------
+token_display = html.Div(id='token-count', style={"margin-top": "20px"})
+timer_display = html.Div(id='timer-display', style={"margin-top": "20px"})
 
 # -------------------- Dash App Layout --------------------
 app.layout = dbc.Container([
@@ -266,7 +346,8 @@ app.layout = dbc.Container([
                 style={"margin-top": "10px"}
             ),
             html.Hr(),
-            shutdown_button
+            shutdown_button,
+            shutdown_tooltip
         ]
     ),
     # Main Textarea & Buttons
@@ -289,46 +370,29 @@ app.layout = dbc.Container([
         ]
     ),
     html.Div([
-        dbc.Button(
-            [
-                html.I(className="fa fa-paper-plane", style={"margin-right": "2px"}),
-                "Submit"
-            ],
-            id='submit-button',
-            color="primary",
-            style={"margin-right": "2px"}
-        ),
-        dbc.Button(
-            [
-                html.I(className="fa fa-save", style={"margin-right": "2px"}),
-                "Save"
-            ],
-            id='copy-button',
-            color="secondary",
-            style={"margin-right": "2px"}
-        ),
+        submit_button,
+        submit_tooltip,
+        copy_button,
+        copy_tooltip,
         gear_button,
+        gear_tooltip,
         refresh_prompt_button,  # Refresh Prompt button
+        refresh_tooltip,
         refresh_prompt_status,  # Status message for refresh prompt
-        refresh_tooltip,  # Tooltip for refresh button
         html.Div(
             id='upload-folder-div',
             style={"display": "none", "margin-left": "2px"},
             children=[
                 dcc.Upload(
                     id='upload-folder',
-                    children=dbc.Button(
-                        [
-                            html.I(className="fa fa-upload", style={"margin-right": "2px"}),
-                            "Upload Folder"
-                        ],
-                        color="secondary"
-                    ),
+                    children=upload_button,
                     multiple=False
-                )
+                ),
+                upload_tooltip
             ]
         ),
-        apply_button
+        apply_button,
+        apply_tooltip
     ], style={"display": "flex", "align-items": "center", "margin-top": "10px"}),
     html.Div(id='upload-status', style={"margin-top": "10px"}),
     html.Div(id='copy-status', style={"margin-top": "10px"}),
@@ -349,15 +413,8 @@ app.layout = dbc.Container([
                 type='text',
                 style={"margin-top": "20px"}
             ),
-            dbc.Button(
-                [
-                    html.I(className="fab fa-github", style={"margin-right": "5px"}),
-                    "Git Commit and Push"
-                ],
-                id='git-commit-push',
-                color="success",
-                className="mr-1"
-            ),
+            git_commit_push_button,
+            git_tooltip,
             html.Div(id='push-status', style={"margin-top": "20px"}),
         ]
     ),
