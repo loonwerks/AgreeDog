@@ -4,9 +4,8 @@
 """
 @Author: Amer N. Tahat, Collins Aerospace.
 Description: INSPECTA_Dog copilot - ChatCompletion, and Multi-Modal Mode.
-Date: 1st July 2024
+Strat Date: 1st July 2024
 """
-
 import os
 import dash
 from dash import dcc, html
@@ -22,7 +21,7 @@ import warnings
 import time
 import threading
 from flask import request  # Import Flask's request
-
+import xml.etree.ElementTree as ET
 # Utility imports
 import INSPECTA_Dog_cmd_util
 import INSPECTA_dog_system_msgs
@@ -32,7 +31,6 @@ from git_actions import *
 # -------------------- Global Logging Setup --------------------
 # A global list to store log messages.
 copilot_logs = []
-
 
 def log_message(msg, level="info"):
     """
@@ -108,20 +106,21 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 refresh_prompt_button = dbc.Button(
     [
         html.I(className="fa fa-sync", style={"margin-right": "5px"}),
-        "Refresh Files & Update Prompt"
+        "Feedback Loop"
     ],
     id="refresh-prompt",
     color="warning",
     style={"margin-left": "5px"}
 )
 refresh_tooltip = dbc.Tooltip(
-    "Click to reload files from command line and update the prompt",
+    "Update variables from AGREE messages and auto-generate prompts for new counterexamples. You can still add extra requirements",
     target="refresh-prompt",
     placement="top"
 )
 refresh_prompt_status = html.Div(
     id='refresh-prompt-status',
-    style={"margin-top": "10px", "color": "green", "font-weight": "bold"}
+    #style={"margin-top": "10px", "color": "green", "font-weight": "bold"}
+    style={"display": "none"}
 )
 
 # Gear button and tooltip
@@ -167,7 +166,7 @@ apply_button = dbc.Button(
     style={"margin-left": "5px"}
 )
 apply_tooltip = dbc.Tooltip(
-    "Click to apply modifications",
+    "Applies changes to the file. Use undo or Git revert to restore previous work.",
     target="apply-modifications",
     placement="top"
 )
@@ -183,7 +182,7 @@ submit_button = dbc.Button(
     style={"margin-right": "2px"}
 )
 submit_tooltip = dbc.Tooltip(
-    "Click to submit your input",
+    "Submit your input",
     target="submit-button",
     placement="top"
 )
@@ -199,7 +198,8 @@ copy_button = dbc.Button(
     style={"margin-right": "2px"}
 )
 copy_tooltip = dbc.Tooltip(
-    "Click to copy conversation history",
+    "Click to save conversation history to the temp-history directory on your local disk. To share with your\
+     team, enable the Git commit feature to submit it to the shared memory repo. ",
     target="copy-button",
     placement="top"
 )
@@ -265,7 +265,8 @@ app.layout = dbc.Container([
             html.Img(
                 src="assets/collins_logo.png",
                 id="collins-logo",
-                style={"height": "70px", "width": "250px", "vertical-align": "middle"}
+                style={"display":"none"}
+                #style={"height": "70px", "width": "250px", "vertical-align": "middle"}
             )
         ], style={"display": "flex", "align-items": "center", "justify-content": "space-between",
                   "margin-bottom": "5px"})
@@ -317,11 +318,13 @@ app.layout = dbc.Container([
             dbc.RadioItems(
                 id="model-choice",
                 options=[
+                    {"label": "GPT-O3 reasoning (128k tk)", "value": "o3"},
+                    {"label": "GPT-4.1 multi-modal (1 m tk)", "value": "gpt-4.1.2025-4-14"},
                     {"label": "GPT-4o multi-modal (128k tk)", "value": "gpt-4o"},
                     {"label": "GPT-4-Turbo (128k tk)", "value": "gpt-4-turbo"},
                     {"label": "GPT-4 (8k tk)", "value": "gpt-4-0613", "disabled": True},
                 ],
-                value="gpt-4o",
+                value="o3",#"gpt-4o",
                 inline=True,
                 style={"margin-top": "10px"}
             ),
@@ -463,148 +466,88 @@ formatted_elapsed_time = "00:00:00.00"
 
 
 # -------------------- Helper functions for Counterexample Handling --------------------
-def get_latest_counterexample(counterexample_dir):
-    """
-    Scans the counterexample directory for the latest file.
 
-    Args:
-        counterexample_dir: Directory to scan for counterexample files
+def read_agree_log(log_dir: str) -> list:
+    path = os.path.join(log_dir, 'agree.log')
+    with open(path, 'r') as f:
+        data = json.load(f)
+    return data
 
-    Returns:
-        tuple: (latest_file_path, latest_file_name) or (None, None) if no files found
-    """
-    if not os.path.exists(counterexample_dir):
-        log_message(f"Counterexample directory not found: {counterexample_dir}", "warning")
-        return None, None
+def is_model_valid(results: list) -> bool:
+    def _rec(node):
+        if node.get('result') == 'Invalid':
+            return False
+        for child in node.get('analyses', []):
+            if not _rec(child):
+                return False
+        return True
+    return all(_rec(entry) for entry in results)
 
-    # Get all files in the directory
-    files = [f for f in os.listdir(counterexample_dir)
-             if os.path.isfile(os.path.join(counterexample_dir, f))]
+def find_failing_contracts(log_dir: str) -> list:
+    data = read_agree_log(log_dir)
+    failing = []
+    def _rec(node):
+        if node.get('result') == 'Invalid':
+            name = node.get('name')
+            if name:
+                failing.append(name)
+        for child in node.get('analyses', []):
+            _rec(child)
+    for entry in data:
+        _rec(entry)
+    return list(dict.fromkeys(failing))
 
-    if not files:
-        log_message(f"No counterexample files found in {counterexample_dir}", "info")
-        return None, None
+def find_xmls_with_failures(xml_dir: str, fail_names: list) -> list:
+    matches = []
+    for fn in os.listdir(xml_dir):
+        if not fn.endswith(".lus.xml"):
+            continue
+        path = os.path.join(xml_dir, fn)
+        try:
+            tree = ET.parse(path)
+            root = tree.getroot()
+            for prop in root.findall('.//Property'):
+                if prop.get('name') in fail_names:
+                    matches.append(path)
+                    break
+        except ET.ParseError:
+            continue
+    return matches
 
-    # Sort files by modification time to get the newest file
-    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
-    latest_file = files_sorted[-1]
-    latest_file_path = os.path.join(counterexample_dir, latest_file)
+def parse_counterexample_xml(xml_path: str) -> pd.DataFrame:
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+    cex = root.find('.//Counterexample')
+    data = {}
+    times = set()
+    for sig in cex.findall('Signal'):
+        name = sig.get('name')
+        for val in sig.findall('Value'):
+            t = int(val.get('time'))
+            v = val.text
+            times.add(t)
+            data.setdefault(name, {})[t] = v
+    df = pd.DataFrame.from_dict(data, orient='columns')
+    df.index = sorted(times)
+    df.index.name = 'Step'
+    return df
 
-    return latest_file_path, latest_file
+def df_to_markdown(df: pd.DataFrame) -> str:
+    return df.to_markdown(tablefmt='github')
 
-
-def format_no_counterexample_prompt(aadl_content, requirements_content=None):
-    """
-    Creates a prompt for when no counterexample is available.
-
-    Args:
-        aadl_content: Content of the AADL model file
-        requirements_content: Optional requirements content
-
-    Returns:
-        str: Formatted prompt
-    """
-    if not aadl_content:
-        return ""
-
+def construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content):
     prompt_parts = []
-
-    # Add requirements if available
     if requirements_content:
-        prompt_parts.append(
-            "When analyzing and modifying the code, consider these requirements:\n"
-            f"{requirements_content}\n"
-        )
-
-    # Add AADL model content
-    prompt_parts.append(
-        "No counterexample is available. Please analyze the following AADL model:\n"
-        f"{aadl_content}\n\n"
-        "Please help with one of the following:\n"
-        "1. Identify potential issues in the model that could lead to verification failures\n"
-        "2. Suggest improvements to make the model more robust\n"
-        "3. Explain how the AGREE verification process works for this type of model\n"
-        "If you need to provide modified code, please enclose it in triple backticks (```)."
-    )
-
-    return "\n".join(prompt_parts)
-
-
-def format_counterexample_prompt(aadl_content, counterexample_content, requirements_content=None):
-    """
-    Creates a prompt that includes a counterexample.
-
-    Args:
-        aadl_content: Content of the AADL model file
-        counterexample_content: Content of the counterexample file
-        requirements_content: Optional requirements content
-
-    Returns:
-        str: Formatted prompt
-    """
-    prompt_parts = []
-
-    # Add requirements if available
-    if requirements_content:
-        prompt_parts.append(
-            "When analyzing and modifying the code, consider these requirements:\n"
-            f"{requirements_content}\n"
-        )
-
-    # Add AADL model content
-    prompt_parts.append(
-        "Analyze the following AADL model:\n"
-        f"{aadl_content}\n"
-    )
-
-    # Add counterexample content
-    prompt_parts.append(
-        "AGREE generated the following counterexample which indicates a verification failure:\n"
-        f"{counterexample_content}\n\n"
-        "Please explain:\n"
-        "1. Why the verification failed (which property was violated and why)\n"
-        "2. How to fix the model to address this issue\n"
-        "Provide the complete modified AADL code between triple backticks (```)."
-    )
-
-    return "\n".join(prompt_parts)
-
-
-def construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content):
-    """
-    Constructs a comprehensive prompt with AADL model, counterexample, and requirements.
-    """
-    prompt_parts = []
-
-    # Add requirements section if available
-    if requirements_content:
-        prompt_parts.append(
-            "When analyzing and modifying the code, consider these requirements:\n"
-            f"{requirements_content}\n"
-        )
-
-    # Add AADL model
+        prompt_parts.append("When analyzing and modifying the code, consider these requirements:\n"
+                            f"{requirements_content}\n")
     if aadl_content:
-        prompt_parts.append(
-            "Analyze the following AADL model:\n"
-            f"{aadl_content}\n"
-        )
-
-    # Add counterexample
-    if counterexample_content:
-        prompt_parts.append(
-            "AGREE generated the following counterexample:\n"
-            f"{counterexample_content}\n"
-        )
-
-    # Add request
-    prompt_parts.append(
-        "Please explain why the verification failed and suggest modifications to fix the issues. "
-        "Write the modified AADL code between ``` ```."
-    )
-
+        prompt_parts.append("Analyze the following AADL model:\n"
+                            f"{aadl_content}\n")
+    if ce_examples:
+        prompt_parts.extend(ce_examples)
+    prompt_parts.append("Please explain why the verification failed and suggest modifications to fix the issues. "
+                        "Write the modified AADL code between ``` ```.")
     return "\n".join(prompt_parts)
-
 
 # -------------------- Callbacks --------------------
 # Callback for Log Display
@@ -708,135 +651,68 @@ def update_submit_button(global_context_prompt):
 
 # -------------------- Enhanced Refresh Prompt Callback --------------------
 @app.callback(
-    [Output('global-context-prompt', 'data'),
-     Output('refresh-prompt-status', 'children')],
+    [Output('global-context-prompt', 'data'), Output('refresh-prompt-status', 'children')],
     Input('refresh-prompt', 'n_clicks')
 )
 def refresh_prompt_callback(n_clicks):
     if not n_clicks:
         raise dash.exceptions.PreventUpdate
-
-    # Track the latest counterexample file
     global last_counterexample_file
 
-    # Re-read all files provided via command line
     aadl_content = ""
     requirements_content = ""
-    counterexample_content = ""
-
-    # Get the AADL model content
     if cli_config["start_file"]:
         working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
         start_file_path = os.path.join(working_dir, cli_config["start_file"])
         if os.path.exists(start_file_path):
             aadl_content = read_start_file_content(start_file_path)
-            log_message(f"Re-read AADL model file: {start_file_path}", "info")
         else:
             log_message(f"AADL model file not found: {start_file_path}", "warning")
-
-    # Get the requirements content
     if cli_config["requirement_file"]:
-        if os.path.exists(cli_config["requirement_file"]):
-            requirements_content = read_requirements_file(cli_config["requirement_file"])
-            log_message(f"Re-read requirements file: {cli_config['requirement_file']}", "info")
-        else:
-            log_message(f"Requirements file not found: {cli_config['requirement_file']}", "warning")
+        requirements_content = read_requirements_file(cli_config["requirement_file"])
+    agree_log_dir = os.path.dirname(cli_config["counter_example"]) if cli_config["counter_example"] else "."
 
-    # Determine counterexample directory
-    if cli_config["counter_example"]:
-        counterexample_dir = os.path.dirname(cli_config["counter_example"])
-    else:
-        counterexample_dir = "counter_examples"
+    try:
+        agree_data = read_agree_log(agree_log_dir)
+    except FileNotFoundError:
+        prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
+        status = "agree.log not found. Only requirements and model shown."
+        return prompt, log_message(status, "warning")
 
-    if not os.path.exists(counterexample_dir):
-        message = f"Counterexamples folder not found: {counterexample_dir}"
-        log_message(message, "warning")
+    if not is_model_valid(agree_data):
+        fail_names = find_failing_contracts(agree_log_dir)
+        xml_paths = find_xmls_with_failures("/tmp", fail_names)
+        ce_examples = []
+        used_xmls = set()
+        for fail_name in fail_names:
+            found = False
+            for xml in xml_paths:
+                if xml in used_xmls:
+                    continue
+                try:
+                    tree = ET.parse(xml)
+                    root = tree.getroot()
+                    for prop in root.findall('.//Property'):
+                        if prop.get('name') == fail_name:
+                            df = parse_counterexample_xml(xml)
+                            cex_md = df_to_markdown(df)
+                            ce_examples.append(f"Counterexample for property `{fail_name}` (from `{os.path.basename(xml)}`):\n{cex_md}\n---")
+                            used_xmls.add(xml)
+                            found = True
+                            break
+                    if found:
+                        break
+                except Exception as e:
+                    continue
+            if not found:
+                ce_examples.append(f"**No counterexample XML in /tmp for failed property `{fail_name}`**\n---")
+        status = f"Prompt updated with failures: {', '.join(fail_names)}"
+        prompt = construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content)
+        return prompt, log_message(status, "info")
 
-        # Create a default prompt with just the AADL content
-        if aadl_content:
-            new_prompt = (
-                "No counterexample detected. "
-                "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
-                f"{aadl_content}"
-            )
-            if requirements_content:
-                new_prompt = (
-                                 "When analyzing and modifying the code, consider these requirements:\n"
-                                 f"{requirements_content}\n\n"
-                             ) + new_prompt
-
-            return new_prompt, "Prompt updated with latest AADL model, but no counterexample found."
-        else:
-            return "", "Failed to update prompt: Neither AADL model nor counterexample found."
-
-    # Check for counterexample files
-    files = [f for f in os.listdir(counterexample_dir)
-             if os.path.isfile(os.path.join(counterexample_dir, f))]
-
-    if not files:
-        # No counterexample files found
-        if aadl_content:
-            new_prompt = (
-                "No counterexample detected. "
-                "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
-                f"{aadl_content}"
-            )
-            if requirements_content:
-                new_prompt = (
-                                 "When analyzing and modifying the code, consider these requirements:\n"
-                                 f"{requirements_content}\n\n"
-                             ) + new_prompt
-
-            return new_prompt, log_message("Updated prompt with AADL model, but no counterexample found.", "info")
-        else:
-            return "", log_message("Failed to update prompt: Neither AADL model nor counterexample found.", "warning")
-
-    # Sort files by modification time to get the newest file
-    files_sorted = sorted(files, key=lambda f: os.path.getmtime(os.path.join(counterexample_dir, f)))
-    latest_file = files_sorted[-1]
-
-    # Check if this is a new counterexample file
-    new_counterexample_detected = last_counterexample_file != latest_file
-
-    if new_counterexample_detected:
-        # Update the global tracker
-        last_counterexample_file = latest_file
-
-        # Read the counterexample content
-        counterexample_path = os.path.join(counterexample_dir, latest_file)
-        counterexample_content = read_counter_example_file(counterexample_path)
-        log_message(f"New counterexample detected: {latest_file}", "info")
-
-        # Construct a new prompt with all updated content
-        new_prompt = construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content)
-        status = f"New counterexample file detected: {latest_file}. Prompt updated with latest files."
-    else:
-        # No new counterexample, but still update with latest AADL content
-        if aadl_content:
-            if cli_config["counter_example"] and os.path.exists(cli_config["counter_example"]):
-                # Use the existing counterexample
-                counterexample_content = read_counter_example_file(cli_config["counter_example"])
-                new_prompt = construct_comprehensive_prompt(aadl_content, counterexample_content, requirements_content)
-                status = "No new counterexample detected. Prompt updated with latest AADL model and existing counterexample."
-            else:
-                # No counterexample to use
-                new_prompt = (
-                    "No new counterexample detected. "
-                    "Please analyze the following AADL model and assist with any questions or improvements:\n\n"
-                    f"{aadl_content}"
-                )
-                if requirements_content:
-                    new_prompt = (
-                                     "When analyzing and modifying the code, consider these requirements:\n"
-                                     f"{requirements_content}\n\n"
-                                 ) + new_prompt
-                status = "No new counterexample detected. Prompt updated with latest AADL model only."
-        else:
-            new_prompt = ""
-            status = "Failed to update prompt: AADL model not found or empty."
-
-    return new_prompt, log_message(status, "info")
-
+    prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
+    status = "All properties, contracts and consistencies valid, no counterexample found."
+    return prompt, log_message(status, "info")
 
 # -------------------- Enhanced handle_app_interactions Callback --------------------
 @app.callback(
@@ -1219,7 +1095,7 @@ def commit_and_push(n_clicks, commit_message):
 
 
 # -------------------- Utility Functions --------------------
-def get_completion_from_messages(messages, temperature=0.7, model="gpt-4-0613"):
+def get_completion_from_messages(messages,temperature=1, model="o3"): #temperature=0.7, model="gpt-4-0613"):
     global total_api_time
     start_time_local = time.time()
     response = openai.ChatCompletion.create(
@@ -1534,3 +1410,4 @@ if __name__ == '__main__':
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         log_message("Shutting down the server gracefully.", "warning")
+
