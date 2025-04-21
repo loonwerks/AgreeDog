@@ -39,3 +39,9 @@ INSPECTA_Dog_Cli_Util.py
 uploaded_dir/Integer_Toy.aadl
 dist/
 build/
+./xml_helpers.py
+./Judge_worker.py
+./Jkind_wrapper.py
+./ai_router.py
+./jkind-router.py
+./json_helpers.py
