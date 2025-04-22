@@ -810,8 +810,10 @@ def refresh_prompt_callback(n_clicks):
         status = f"Prompt updated with failures: {', '.join(fail_names)}"
         return prompt, log_message(status, "info")
 
-    prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
-    status = "All properties valid, no counterexamples found."
+    # prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
+    # status = "All properties valid, no counterexamples found."
+    status = "Great, all AGREE results are valid and no counterexamples were detected."
+    prompt = status  # Make the prompt just this status message
     return prompt, log_message(status, "info")
 
 # -------------------- Enhanced handle_app_interactions Callback --------------------
@@ -893,22 +895,22 @@ def handle_app_interactions(confirm_n_clicks,
             context_added = "false"
 
         # Prepare the user input with global context prompt if available
-        effective_user_input = user_input or ""
-
-        # If we have a global context prompt, use it as the base for the user's input
-        if global_context_prompt and not effective_user_input.startswith(global_context_prompt):
-            if effective_user_input:
-                # Combine global prompt with user's additional input
-                effective_user_input = (
-                    f"{global_context_prompt}\n\n"
-                    f"Additional request: {effective_user_input}"
-                )
-                log_message("Combined global context prompt with user's additional input", "info")
-            else:
-                # Just use the global prompt
-                effective_user_input = global_context_prompt
-                log_message("Using global context prompt as there was no additional user input", "info")
-
+        effective_user_input = prepare_effective_input(user_input or "", global_context_prompt)
+        # effective_user_input = user_input or ""
+        #
+        # # If we have a global context prompt, use it as the base for the user's input
+        # if global_context_prompt and not effective_user_input.startswith(global_context_prompt):
+        #     if effective_user_input:
+        #         # Combine global prompt with user's additional input
+        #         effective_user_input = (
+        #             f"{global_context_prompt}\n\n"
+        #             f"Additional request: {effective_user_input}"
+        #         )
+        #         log_message("Combined global context prompt with user's additional input", "info")
+        #     else:
+        #         # Just use the global prompt
+        #         effective_user_input = global_context_prompt
+        #         log_message("Using global context prompt as there was no additional user input", "info")
         upload_directory = get_resource_path("uploaded_dir")
         subdirectories = [
             os.path.join(upload_directory, d)
@@ -1436,6 +1438,34 @@ def concatenate_imports(start_file, project_files, folder_path,
 
         handle_requires(file_path, project_files, files_to_check, processed_files)
     return context
+
+def handle_valid_model_prompt(user_input, global_prompt):
+    """
+    Checks if the global prompt indicates no counterexamples and formats user input accordingly.
+    """
+    if global_prompt and "All properties valid, no counterexamples found." in global_prompt:
+        return f"Great, all AGREE results are valid and no counterexamples were detected.\n\n{user_input or ''}"
+    return None
+
+
+def prepare_effective_input(user_input, global_prompt):
+    """
+    Prepares the final user input by conditionally modifying it based on context.
+    """
+    handled_valid = handle_valid_model_prompt(user_input, global_prompt)
+    if handled_valid is not None:
+        log_message("Handled input for valid model prompt.", "info")
+        return handled_valid
+
+    if global_prompt and not user_input.startswith(global_prompt):
+        if user_input:
+            log_message("Combined global context prompt with user's additional input", "info")
+            return f"{global_prompt}\n\nAdditional request: {user_input}"
+        else:
+            log_message("Using global context prompt as there was no additional user input", "info")
+            return global_prompt
+
+    return user_input
 
 
 def highlight_keywords(text):
