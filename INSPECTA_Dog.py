@@ -466,6 +466,47 @@ formatted_elapsed_time = "00:00:00.00"
 
 
 # -------------------- Helper functions for Counterexample Handling --------------------
+def find_agree_log_dir(start_dir="."):
+    """
+    Recursively search for a directory named 'AgreeDog' starting from 'start_dir'.
+    Returns the full path if found, else returns None.
+    """
+    for root, dirs, files in os.walk(start_dir):
+        if 'AgreeDog' in dirs:
+            return os.path.join(root, 'AgreeDog')
+    return None
+
+def try_load_cli_counterexample(aadl_content: str, requirements_content: str) -> tuple:
+    """
+    Attempts to load a counterexample file from the CLI.
+    If successful, returns a constructed prompt and status message.
+    Otherwise, returns (None, None) so the fallback logic can proceed.
+    """
+    ce_examples = []
+    cli_cex_path = cli_config.get("counter_example")
+
+    if cli_cex_path and os.path.isfile(cli_cex_path):
+        cli_cex_content = read_counter_example_file(cli_cex_path)
+        if cli_cex_content.strip():
+            ce_examples.append(f"Counterexample provided via command-line:\n{cli_cex_content}\n---")
+            prompt = construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content)
+            status = log_message("Prompt updated using counterexample from CLI", "info")
+            return prompt, status
+        else:
+            log_message("CLI counterexample file was empty or invalid. Falling back to log/xml.", "warning")
+
+    return None, None
+
+def read_counter_example_file(cex_path: str) -> str:
+    try:
+        with open(cex_path, 'r') as f:
+            content = f.read()
+        log_message(f"Loaded counterexample from CLI path: {cex_path}", "info")
+        return content
+    except Exception as e:
+        log_message(f"Failed to read CLI counterexample file at {cex_path}: {e}", "warning")
+        return ""
+
 
 def read_agree_log(log_dir: str) -> list:
     path = os.path.join(log_dir, 'agree.log')
@@ -650,6 +691,22 @@ def update_submit_button(global_context_prompt):
 
 
 # -------------------- Enhanced Refresh Prompt Callback --------------------
+
+cex_extensions = [".lus.xml", ".txt", ".xls", ".ods"]
+
+# Helper: find new counterexample files (not previously used)
+def get_new_counterexample_files(dir_path: str, previously_seen: set) -> list:
+    if not os.path.isdir(dir_path):
+        return []
+    candidates = []
+    for fn in os.listdir(dir_path):
+        if os.path.splitext(fn)[1] in cex_extensions:
+            full_path = os.path.join(dir_path, fn)
+            if full_path not in previously_seen:
+                candidates.append(full_path)
+    return candidates
+
+# Modified refresh_prompt_callback
 @app.callback(
     [Output('global-context-prompt', 'data'), Output('refresh-prompt-status', 'children')],
     Input('refresh-prompt', 'n_clicks')
@@ -657,10 +714,11 @@ def update_submit_button(global_context_prompt):
 def refresh_prompt_callback(n_clicks):
     if not n_clicks:
         raise dash.exceptions.PreventUpdate
-    global last_counterexample_file
 
+    global last_counterexample_file
     aadl_content = ""
     requirements_content = ""
+
     if cli_config["start_file"]:
         working_dir = cli_config["working_dir"] if cli_config["working_dir"] else os.getcwd()
         start_file_path = os.path.join(working_dir, cli_config["start_file"])
@@ -668,10 +726,34 @@ def refresh_prompt_callback(n_clicks):
             aadl_content = read_start_file_content(start_file_path)
         else:
             log_message(f"AADL model file not found: {start_file_path}", "warning")
+
     if cli_config["requirement_file"]:
         requirements_content = read_requirements_file(cli_config["requirement_file"])
-    agree_log_dir = os.path.dirname(cli_config["counter_example"]) if cli_config["counter_example"] else "."
 
+    # Try CLI-provided counterexample first
+    cli_cex_path = cli_config.get("counter_example")
+    counter_example_dir_path = None
+
+    if cli_cex_path and os.path.isfile(cli_cex_path):
+        cli_cex_content = read_counter_example_file(cli_cex_path)
+        if cli_cex_content.strip():
+            ce_examples = [f"Counterexample provided via command-line:\n{cli_cex_content}\n---"]
+            prompt = construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content)
+            status = log_message("Prompt updated using counterexample from CLI", "info")
+            counter_example_dir_path = os.path.dirname(cli_cex_path)
+            cli_config["counter_example"] = None
+            last_counterexample_file = cli_cex_path
+            return prompt, status
+        else:
+            log_message("CLI counterexample file was empty or invalid. Falling back to log/xml.", "warning")
+
+    # Fallback: agree.log + XML
+    counterexample_dir = os.path.dirname(cli_config["counter_example"]) if cli_config["counter_example"] else "."
+    #agree_log_dir = "~/AgreeDog"#
+    agree_log_dir = find_agree_log_dir(os.path.expanduser("~"))  # or os.getcwd()
+    if not agree_log_dir:
+        log_message("Could not locate AgreeDog directory. Falling back to current directory.", "warning")
+        agree_log_dir = os.getcwd()
     try:
         agree_data = read_agree_log(agree_log_dir)
     except FileNotFoundError:
@@ -681,37 +763,55 @@ def refresh_prompt_callback(n_clicks):
 
     if not is_model_valid(agree_data):
         fail_names = find_failing_contracts(agree_log_dir)
-        xml_paths = find_xmls_with_failures("/tmp", fail_names)
+
+        # Check counterexamples/ directory first
+        #counterexample_dir = os.path.join(working_dir, "counter_examples")
+        if not os.path.isdir(counterexample_dir) and counter_example_dir_path:
+            counterexample_dir = counter_example_dir_path
+
+        seen = {last_counterexample_file} if last_counterexample_file else set()
+        new_cex_files = get_new_counterexample_files(counterexample_dir, seen)
+
+        if not new_cex_files:
+            log_message("No new counterexamples found in counterexamples/. Falling back to /tmp", "info")
+            counterexample_dir = tempfile.gettempdir() ## ToDo check the import for xml
+            new_cex_files = get_new_counterexample_files(counterexample_dir, seen)
+
         ce_examples = []
-        used_xmls = set()
+        used_paths = set()
         for fail_name in fail_names:
-            found = False
-            for xml in xml_paths:
-                if xml in used_xmls:
+            for path in new_cex_files:
+                if path in used_paths:
                     continue
-                try:
-                    tree = ET.parse(xml)
-                    root = tree.getroot()
-                    for prop in root.findall('.//Property'):
-                        if prop.get('name') == fail_name:
-                            df = parse_counterexample_xml(xml)
-                            cex_md = df_to_markdown(df)
-                            ce_examples.append(f"Counterexample for property `{fail_name}` (from `{os.path.basename(xml)}`):\n{cex_md}\n---")
-                            used_xmls.add(xml)
-                            found = True
-                            break
-                    if found:
+                if path.endswith(".lus.xml"):
+                    try:
+                        tree = ET.parse(path)
+                        root = tree.getroot()
+                        for prop in root.findall('.//Property'):
+                            if prop.get('name') == fail_name: ## ToDo this is the property name not the file name
+                                df = parse_counterexample_xml(path)
+                                md = df_to_markdown(df)
+                                ce_examples.append(f"Counterexample for `{fail_name}` (from `{os.path.basename(path)}`):\n{md}\n---")
+                                used_paths.add(path)
+                                break
+                    except Exception:
+                        continue
+                else:
+                    try:
+                        with open(path, 'r') as f:
+                            ce_text = f.read()
+                        ce_examples.append(f"Counterexample (from `{os.path.basename(path)}`):\n{ce_text}\n---")
+                        used_paths.add(path)
                         break
-                except Exception as e:
-                    continue
-            if not found:
-                ce_examples.append(f"**No counterexample XML in /tmp for failed property `{fail_name}`**\n---")
-        status = f"Prompt updated with failures: {', '.join(fail_names)}"
+                    except Exception:
+                        continue
+
         prompt = construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content)
+        status = f"Prompt updated with failures: {', '.join(fail_names)}"
         return prompt, log_message(status, "info")
 
     prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
-    status = "All properties, contracts and consistencies valid, no counterexample found."
+    status = "All properties valid, no counterexamples found."
     return prompt, log_message(status, "info")
 
 # -------------------- Enhanced handle_app_interactions Callback --------------------
@@ -1410,4 +1510,3 @@ if __name__ == '__main__':
         app.run_server(debug=False, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         log_message("Shutting down the server gracefully.", "warning")
-
