@@ -27,6 +27,7 @@ import INSPECTA_Dog_cmd_util
 import INSPECTA_dog_system_msgs
 from INSPECTA_Dog_cmd_util import *
 from git_actions import *
+import webbrowser
 
 # -------------------- Global Logging Setup --------------------
 # A global list to store log messages.
@@ -810,8 +811,6 @@ def refresh_prompt_callback(n_clicks):
         status = f"Prompt updated with failures: {', '.join(fail_names)}"
         return prompt, log_message(status, "info")
 
-    # prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
-    # status = "All properties valid, no counterexamples found."
     status = "Great, all AGREE results are valid and no counterexamples were detected."
     prompt = status  # Make the prompt just this status message
     return prompt, log_message(status, "info")
@@ -1533,8 +1532,10 @@ def format_display_text(conversation_history, display_mode):
         return [label] + highlighted_last
 
 
+
 # -------------------- Run the Server --------------------
 if __name__ == '__main__':
+    webbrowser.open("http://127.0.0.1:8050")
     log_message("Starting the Dash server...", "info")
     try:
         app.run_server(debug=False, host='127.0.0.1', port=8050)
