@@ -1063,7 +1063,9 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
     new_code = re.sub(r'^(?:\s*)aadl', '-- aadl', new_code)
 
     try:
-        with open(target_path, "w") as f:
+        # with open(target_path, "w") as f:
+        #     f.write(new_code)
+        with open(target_path, "w", encoding="utf-8") as f:
             f.write(new_code)
     except Exception as e:
         error_message = f"Failed to overwrite {target_path}: {e}"
