@@ -45,3 +45,7 @@ build/
 ./ai_router.py
 ./jkind-router.py
 ./json_helpers.py
+./choose_cex.py
+./test-eval.py
+./utils_cex.py
+
