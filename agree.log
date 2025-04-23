@@ -1,0 +1,402 @@
+[
+    {
+        "name": "Verification for Car.Car_Impl",
+        "result": "Valid",
+        "timestamp": 1745355694281,
+        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+        "analyses": [
+            {
+                "name": "Contract Guarantees",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Subcomponent Assumptions",
+                        "result": "Valid"
+                    },
+                    {
+                        "name": "[G_car_1] actual speed never exceeds target speed",
+                        "result": "Valid"
+                    },
+                    {
+                        "name": "[G_car_2] acceleration is limited",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "This component consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "THROT consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "CNTRL consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "AXL consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "SM consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "Component composition consistent",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "Verification for THROT",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Contract Guarantees",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Subcomponent Assumptions",
+                                "result": "Valid"
+                            },
+                            {
+                                "name": "[G_throttle_1] Throttle_Behavior",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "This component consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Component composition consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Verification for CNTRL",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Contract Guarantees",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Subcomponent Assumptions",
+                                "result": "Valid"
+                            },
+                            {
+                                "name": "[G_speed_1] Acuator_Behavior",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "This component consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Component composition consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Verification for AXL",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Contract Guarantees",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Subcomponent Assumptions",
+                                "result": "Valid"
+                            },
+                            {
+                                "name": "[G_axle_1] roll limiter",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "This component consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Component composition consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Verification for SM",
+                "result": "Valid",
+                "timestamp": 1745355694281,
+                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                "analyses": [
+                    {
+                        "name": "Contract Guarantees",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Subcomponent Assumptions",
+                                "result": "Valid"
+                            },
+                            {
+                                "name": "[G_tstate_1] behavior",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "This component consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "SSM consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Component composition consistent",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Result",
+                                "result": "Valid"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Verification for SSM",
+                        "result": "Valid",
+                        "timestamp": 1745355694281,
+                        "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                        "analyses": [
+                            {
+                                "name": "Contract Guarantees",
+                                "result": "Valid",
+                                "timestamp": 1745355694281,
+                                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                                "analyses": [
+                                    {
+                                        "name": "Subcomponent Assumptions",
+                                        "result": "Valid"
+                                    },
+                                    {
+                                        "name": "[G_tsubstate_1] sub behavior",
+                                        "result": "Valid"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "This component consistent",
+                                "result": "Valid",
+                                "timestamp": 1745355694281,
+                                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                                "analyses": [
+                                    {
+                                        "name": "Result",
+                                        "result": "Valid"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "Component composition consistent",
+                                "result": "Valid",
+                                "timestamp": 1745355694281,
+                                "hashcode": "��\u000b�\u003d\u0015�\u0000\u0018_�3\u0015@-C",
+                                "analyses": [
+                                    {
+                                        "name": "Result",
+                                        "result": "Valid"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Verification for Axle.Axle_Impl",
+        "result": "Valid",
+        "timestamp": 1745346888629,
+        "hashcode": ";��߈:��/\t��֠4",
+        "analyses": [
+            {
+                "name": "Contract Guarantees",
+                "result": "Valid",
+                "timestamp": 1745346888629,
+                "hashcode": ";��߈:��/\t��֠4",
+                "analyses": [
+                    {
+                        "name": "Subcomponent Assumptions",
+                        "result": "Valid"
+                    },
+                    {
+                        "name": "[G_axle_1] roll limiter",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "This component consistent",
+                "result": "Valid",
+                "timestamp": 1745346888629,
+                "hashcode": ";��߈:��/\t��֠4",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            },
+            {
+                "name": "Component composition consistent",
+                "result": "Valid",
+                "timestamp": 1745346888629,
+                "hashcode": ";��߈:��/\t��֠4",
+                "analyses": [
+                    {
+                        "name": "Result",
+                        "result": "Valid"
+                    }
+                ]
+            }
+        ]
+    }
+]
