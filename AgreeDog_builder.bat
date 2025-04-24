@@ -3,7 +3,7 @@
 :: Author: Amer N Tahat, Collins Aerospace.
 :: Date: 19 Dec 2024
 :: Version: 1.0
-:: Description: This script creates a single-file binary assuming Python 3.9.7 is installed and properly configured.
+:: Description: This script creates a single-file binary assuming Python 3.11.7 is installed and properly configured in PYTHON_EXE below.
 ::              Unlike the Linux shell script version, this batch script assumes system dependencies are handled manually,
 ::              as they are simpler to configure on Windows.
 ::
