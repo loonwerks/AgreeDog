@@ -1346,7 +1346,7 @@ def reset_timer_variables():
 
 def read_start_file_content(file_path):
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             file_content = f.read()
         return file_content.strip()
     except FileNotFoundError:
@@ -1355,12 +1355,12 @@ def read_start_file_content(file_path):
 
 
 def read_generic_file_content(file_path):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
 
 def handle_requires(file_path, project_files, files_to_check, processed_files):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line.lower().startswith('with'):
