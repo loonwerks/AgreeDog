@@ -1,10 +1,9 @@
 Requirement ID,Description,Priority
-assume_A_input_range,Assume that the input to System A is less than 20.,100
-guarantee_A_output_range,Guarantee that the output of System A is less than twice the input value.,100
-assume_B_input_range,Assume that the input to System B is less than 20.,100
-guarantee_B_output_range,Guarantee that the output of System B is less than the input value plus 15.,100
-guarantee_C_mode_always_is_increasing,"Guarantee that the mode is always increasing, meaning it is greater than the previous value.",100
-guarantee_C_output_range,"Guarantee that the output of System C equals the sum of Input1 and Input2 when mode is 3; otherwise, 0.",100
-assume_System_input_range,Assume that the input to the top-level system is less than 10.,100
-guarantee_System_mode_is_always_positive,Guarantee that the mode is always non-negative.,100
-guarantee_System_output_range,Guarantee that the output of the top-level system is less than 50.,100
+assume_max_accel,"""Assume that max acceleration is real and equals the constant value 40.0.""",1
+assume_A1_target_speed,"""Assume that target speed is non-negative (>= 0.0).""",1
+assume_A2_reasonable_target_speed,"""Assume that target speed is less than 150.0.""",1
+instruction-1,"""Actual speed is less than or equal to target speed.""",1
+instruction-2,"""Acceleration is limited.""",1
+instruction-3,"""Use H to require that the target speed remains constant.
+That is, at every step the current target speed equals its previous value
+(with the initial value given by Target_Speed.val).""",1
