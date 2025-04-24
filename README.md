@@ -7,7 +7,7 @@ We recently presented a workshop paper [ERSA24] on AgreeDog and are actively dev
 
 You can run the INSPECTA-Dog application directly from the command line.  
 First, ensure you have activated your Python virtual environment (tested on 
-python 3.9.7):
+python 3.11.9 Windows and 3.11.11 Ubuntu 20.04):
 
 # Setup Instructions
 
@@ -59,7 +59,8 @@ Run the following command to clone the repository and navigate into the project 
 python INSPECTA_Dog.py 
   --working-dir path/to/work_dir 
   --start-file MySystem.aadl 
-  --counter-example path/to/counter_example.txt 
+  --counter-example path/to/counter_example.txt
+  --requirement-file path/to/sys_requirements.csv
   --user-open-api-key [YOUR_API_KEY_HERE]
 
 You can adjust these paths and options as needed. 
@@ -71,6 +72,7 @@ python INSPECTA_Dog.py \
   --working-dir /home/AgreeDog/uploaded_dir/car/packages \
   --counter-example /home/AgreeDog/counter_examples/car_model_cex_3.txt \
   --start-file Car.aadl \
+  --requirement-file /home/AgreeDog/sys_requirements.csv ^
   --user-open-api-key [YOUR_API_KEY_HERE]
   ```
 
@@ -82,6 +84,7 @@ python INSPECTA_Dog.py \
   --working-dir C:\Users\AgreeDog\uploaded_dir\car\packages \
   --counter-example C:\Users\AgreeDog\counter_examples\car_model_cex_3.txt\
   --start-file Car.aadl \
+  --requirement-file C:\AgreeDog\sys_requirements.csv ^
   --user-open-api-key [YOUR_API_KEY_HERE]
 ```
 

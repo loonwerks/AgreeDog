@@ -1063,7 +1063,9 @@ def handle_apply_modifications(n_clicks, conversation_history_json, initial_file
     new_code = re.sub(r'^(?:\s*)aadl', '-- aadl', new_code)
 
     try:
-        with open(target_path, "w") as f:
+        # with open(target_path, "w") as f:
+        #     f.write(new_code)
+        with open(target_path, "w", encoding="utf-8") as f:
             f.write(new_code)
     except Exception as e:
         error_message = f"Failed to overwrite {target_path}: {e}"
@@ -1344,7 +1346,7 @@ def reset_timer_variables():
 
 def read_start_file_content(file_path):
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             file_content = f.read()
         return file_content.strip()
     except FileNotFoundError:
@@ -1353,12 +1355,12 @@ def read_start_file_content(file_path):
 
 
 def read_generic_file_content(file_path):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
 
 
 def handle_requires(file_path, project_files, files_to_check, processed_files):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.strip()
             if line.lower().startswith('with'):
