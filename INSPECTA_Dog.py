@@ -467,14 +467,33 @@ formatted_elapsed_time = "00:00:00.00"
 
 
 # -------------------- Helper functions for Counterexample Handling --------------------
+# def find_agree_log_dir(start_dir="."):
+#     """
+#     Recursively search for a directory named 'AgreeDog' starting from 'start_dir'.
+#     Returns the full path if found, else returns None.
+#     """
+#     for root, dirs, files in os.walk(start_dir):
+#         if 'AgreeDog' in dirs:
+#             return os.path.join(root, 'AgreeDog')
+#     return None
 def find_agree_log_dir(start_dir="."):
     """
-    Recursively search for a directory named 'AgreeDog' starting from 'start_dir'.
-    Returns the full path if found, else returns None.
+    Search backwards along the path from start_dir, looking for an 'agree.log' file.
+    Returns the directory containing 'agree.log', or None if not found.
     """
-    for root, dirs, files in os.walk(start_dir):
-        if 'AgreeDog' in dirs:
-            return os.path.join(root, 'AgreeDog')
+    current_dir = os.path.abspath(start_dir)
+
+    while True:
+        log_path = os.path.join(current_dir, "agree.log")
+        if os.path.isfile(log_path):
+            return current_dir
+
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:
+            # Reached the root directory
+            break
+        current_dir = parent_dir
+
     return None
 
 def try_load_cli_counterexample(aadl_content: str, requirements_content: str) -> tuple:
@@ -725,6 +744,7 @@ def refresh_prompt_callback(n_clicks):
         start_file_path = os.path.join(working_dir, cli_config["start_file"])
         if os.path.exists(start_file_path):
             aadl_content = read_start_file_content(start_file_path)
+            log_message(f"Start file '{start_file_path}' found and loaded successfully.", "info")
         else:
             log_message(f"AADL model file not found: {start_file_path}", "warning")
 
@@ -751,22 +771,29 @@ def refresh_prompt_callback(n_clicks):
     # Fallback: agree.log + XML
     counterexample_dir = os.path.dirname(cli_config["counter_example"]) if cli_config["counter_example"] else "."
     #agree_log_dir = "~/AgreeDog"#
-    agree_log_dir = find_agree_log_dir(os.path.expanduser("~"))  # or os.getcwd()
+    agree_log_dir = find_agree_log_dir(cli_config["working_dir"])
     if not agree_log_dir:
-        log_message("Could not locate AgreeDog directory. Falling back to current directory.", "warning")
+        status= (f"Recursive search failed to find the log file 'agree.log' in any of the directories "
+            f"derived from --working-dir. Under Preferences, select the option to create the agree.log file "
+            f"and place it in the working directory path. Falling back to the current directory ({os.getcwd()}), "
+            f"assuming it is the parent directory of the AgreeDog binary.")
         agree_log_dir = os.getcwd()
     try:
         agree_data = read_agree_log(agree_log_dir)
+        status = "Read agree.log. Data"
+        log_message("Read agree.log data","INFO")
     except FileNotFoundError:
         prompt = construct_comprehensive_prompt(aadl_content, [], requirements_content)
-        status = "agree.log not found. Only requirements and model shown."
+        status = (f"agree.log not found in {cli_config['working_dir']}, falling back to the current directory"
+                  f" ({os.getcwd()}). Only requirements and model shown.")
+        agree_log_dir = os.getcwd()
         return prompt, log_message(status, "warning")
 
     if not is_model_valid(agree_data):
         fail_names = find_failing_contracts(agree_log_dir)
 
         # Check counterexamples/ directory first
-        #counterexample_dir = os.path.join(working_dir, "counter_examples")
+        #ToDo:counterexample_dir = os.path.join(working_dir, "counter_examples")
         if not os.path.isdir(counterexample_dir) and counter_example_dir_path:
             counterexample_dir = counter_example_dir_path
 
@@ -808,6 +835,7 @@ def refresh_prompt_callback(n_clicks):
                         continue
 
         prompt = construct_comprehensive_prompt(aadl_content, ce_examples, requirements_content)
+        confirm_content_in_prompt(aadl_content, prompt, content_description="Start file")
         status = f"Prompt updated with failures: {', '.join(fail_names)}"
         return prompt, log_message(status, "info")
 
@@ -1534,12 +1562,21 @@ def format_display_text(conversation_history, display_mode):
         return [label] + highlighted_last
 
 
+def confirm_content_in_prompt(content: str, prompt: str, content_description: str = "Start file"):
+    """
+    Confirms that specific content was successfully included in the generated prompt.
+    Logs an info or warning message accordingly.
+    """
+    if content.strip() and content.strip() in prompt:
+        log_message(f"{content_description} content successfully included in the generated prompt.", "info")
+    else:
+        log_message(f"Warning: {content_description} content may not have been included in the prompt.", "warning")
 
 # -------------------- Run the Server --------------------
 if __name__ == '__main__':
     webbrowser.open("http://127.0.0.1:8050")
     log_message("Starting the Dash server...", "info")
     try:
-        app.run_server(debug=False, host='127.0.0.1', port=8050)
+        app.run_server(debug=True, host='127.0.0.1', port=8050)
     except KeyboardInterrupt:
         log_message("Shutting down the server gracefully.", "warning")
