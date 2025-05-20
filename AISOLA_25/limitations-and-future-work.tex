@@ -1,0 +1,17 @@
+%\section{Limitations and Future Work}
+\label{sec:limitations}
+
+While AGREE-Dog demonstrated promising results across diverse verification scenarios, several limitations and potential improvements remain:
+
+\begin{itemize}
+\item \textbf{Solver Selection Automation.} Currently, AGREE-Dog users manually select verification solvers (e.g., JKind or SMT solvers). An automated solver orchestration system, utilizing intelligent, context-sensitive routers or multi-agent judge-worker architectures, presents a compelling direction to further streamline verification, optimize performance, and enhance repair automation.
+
+\item \textbf{Complex Multi-root Repairs.} The evaluation primarily involved single-root causes of counterexamples. Extending AGREE-Dog to effectively manage multi-root causes and more complex dependencies remains a critical area for development. Ongoing work aims to refine plugin functionality, enhance semantic diffing mechanisms, and improve navigation and repair recommendations for larger and more intricate system models.
+
+\item \textbf{Integration of Reinforcement Learning (RL).} Although AGREE-Dog currently incorporates memory-informed reasoning to reuse prior strategies, fully leveraging reinforcement learning and adaptive recommendation systems remains at an early stage. Future research will explore RL techniques for dynamically optimizing context selection, repair recommendations, and conversational strategy reuse, capitalizing on evolving capabilities of generative models, particularly given recent advancements such as GPT-4.1's extended 1-million-token context window.
+
+\item \textbf{Federated and Organizational Agents.} Introducing federated agent structures and organizational-level management could significantly improve scalability and collaborative verification workflows. Such enhancements would facilitate distributed verification strategies, robust recommendation systems, and broader best-practice dissemination within engineering organizations.
+
+\item \textbf{Advanced Metrics and Visualization Dashboards.} While the Conversation Quality Assessment Workflow (CQAW) provides insightful metrics, integrating these metrics into comprehensive real-time dashboards could offer deeper insights, better track conversational quality, and help users more
+
+\end{itemize}

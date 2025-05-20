@@ -1,0 +1,45 @@
+%Memory Managment Subsystem
+\begin{algorithm}[htbp]
+\caption{Memory Management and Prompt Optimization in AGREE-Dog}
+\label{alg:memory-management}
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+
+\Input{User input, conversation state, AADL model repository, optional requirements file}
+\Output{Optimized prompt, updated conversation history}
+
+Initialize Short-Term, Temporary, and Long-Term memories\;
+
+Identify and load recently updated files:
+\begin{itemize}
+    \item Identify recently updated files in repository.
+    \item Load \textbf{only} these updated files into Temporary memory.
+    \item Cache filenames and timestamps.
+\end{itemize}
+
+Integrate system-level requirements (if provided)\;
+
+Construct prompt from:
+\begin{itemize}
+    \item Updated files from Temporary memory.
+    \item User input and interaction history.
+    \item System-level requirements.
+\end{itemize}
+
+Ensure prompt size within token limits (truncate oldest entries if necessary)\;
+
+\textbf{Generate} response from AGREE-Dog model\;
+
+Update Short-Term memory with latest interaction\;
+
+\If{\textbf{User selects} \textit{Save Conversation}}{
+    Save conversation to Long-Term memory\;
+}
+
+\If{\textbf{User selects} \textit{Commit to Git}}{
+    Stage conversation and updated files\;
+    Commit and push to remote repository\;
+}
+
+\textbf{return} optimized prompt, updated conversation history\;
+
+\end{algorithm}

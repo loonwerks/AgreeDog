@@ -1,0 +1,35 @@
+%\section{Conversation Quality Evaluation System}
+\label{sec:CQAS}
+%\subsection{Conversational Quality Assessment Problem}
+\begin{figure}[tp]  
+\centering % Still centering the figure  
+\hspace*{-1cm} % Shift the entire figure to the left by 1 cm  
+\resizebox{0.90\columnwidth}{!}{ % Keep the size slightly below the full column width for better fit  
+\tikzstyle{root} = [rectangle, fill=white!3, text width=4.5em, text centered, minimum height=2em, node distance=.10cm]  
+\tikzstyle{block} = [rectangle, draw, fill=blue!3, text width=5.3em, text centered, minimum height=2em, node distance=.40cm]  
+\tikzstyle{block1} = [rectangle, draw, fill=red!3, text width=7em, text centered, minimum height=2em, node distance=.5cm]  
+\tikzstyle{block2} = [rectangle, draw, fill=gray!3, text width=6em, text centered, minimum height=2em, node distance=.5cm]  
+\tikzstyle{block3} = [rectangle, draw, fill=green!10, text width=8em, text centered, minimum height=2em, node distance=.55cm]  
+\tikzstyle{line} = [draw, -latex']  
+  
+\begin{tikzpicture}[auto, node distance=2cm,>=latex']  
+    % Place nodes  
+    \node [root] (root1) {};  
+    \node [block1, right=of root1] (interactions) {\texttt{\textbf{AGREE-Dog}} User-System Interactions};  
+    \node [block2, below=of interactions] (history) {Recording Metrics Automatically};  
+    \node [block2, right=of history] (lemma) {Model-Repair Log Files};  
+    \node [block2, right=of lemma] (quality) {Conversation History Management};  
+    \node [block3, above=of quality] (stat) {\textcolor{blue}{Statistical Analysis and Visualization}};  
+  
+    % Draw edges  
+    \path [line] (root1)  (interactions);  
+    \path [line] (interactions) -- (history);  
+    \path [line] (history) -- (lemma);  
+    \path [line] (lemma) -- (quality);  
+    \path [line] (quality) -- (stat);  
+\end{tikzpicture}  
+} % End of resizebox  
+\caption{AGREE-Dog Conversation Quality Assessment Workflow (CQAW). The workflow tracks structural metrics from conversation histories and temporal metrics from copilot logs, leveraging timestamps to measure user and LLM response latencies. Finally, metrics are analyzed and visualized using AGREE-Dog's statistical utility}  
+\label{fig:CQAS}  
+\end{figure}
+

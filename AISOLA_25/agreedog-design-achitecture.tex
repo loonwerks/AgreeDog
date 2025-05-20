@@ -1,0 +1,94 @@
+%\section{AGREE-Dog Architecture}
+\label{sec:design-architecture}
+
+This section details AGREE-Dog’s architecture (Figure~\ref{fig:agree-dog-refined-workflow}), systematically highlighting key subsystems designed to overcome the practical challenges identified previously (Section 3). 
+%
+Specifically, in this section, we present AGREE-Dog’s intuitive user interface, sophisticated memory and context management algorithms, formal validation-driven feedback loops, and integration with OSATE\,2 and version control systems.
+
+\input{AgreeDog-workflow-figure-block}
+
+\subsection{User Interface and Interaction Workflow}
+AGREE-Dog features an intuitive, streamlined user interface (UI), (Figure~\ref{fig:copilot-ui}), seamlessly integrated within the OSATE environment, designed specifically to minimize cognitive load and simplify complex verification tasks. Central to its usability are clearly labeled, push-button controls, enabling users to directly interact with counterexample explanations, formal validations, and system-level model repairs from a single coherent point of interaction.
+
+A fundamental design principle of this UI is to balance transparency with abstraction—clearly presenting operational outcomes without burdening users with underlying complexities. This approach promotes efficiency, productivity, and verification effectiveness.
+
+At the center of user interaction is the \textit{Feedback} button, which synchronizes the internal state of OSATE\,2 with AGREE-Dog, updating its variables and internal data structures. This synchronization ensures coherence between AGREE-Dog's conversational state and the current OSATE\,2 project status, thus setting the stage for effective model analysis and refinement—detailed further in the next sections.%sequel.
+%
+
+We complement this mechanism, with the \textit{Insert} button which enables seamless integration of AGREE-Dog’s suggested model repairs directly into OSATE\,2,
+significantly streamlining what would otherwise be a tedious manual integration process.
+%
+User-driven requests or specific instructions are submitted via the \textit{Submit} button and can be further elaborated upon through an integrated conversational chat window. This conversational approach encourages precise, targeted refinements by enabling iterative and detailed guidance from the user.
+
+
+Additional UI elements enhance interaction quality and knowledge retention. The \textit{Save} button allows users to archive conversational histories for later review or further analysis and evaluations, as shown in Section~\ref{sec:key-impact}, while the integrated \textit{Git} control provides mechanisms for persistent storage, sharing of verification outcomes, and collaborative insight generation. 
+
+Moreover, advanced configurations are accessible via the dedicated \textit{Settings} menu, %AT: ToDo to add Fig here or in the appendix
+allowing users to customize interaction workflows and select optimal LLM models tailored to specific tasks, such as explanation and inspection using GPT-O3, or rapid code repair through the Inspection and Code Repair agents powered by GPT-O3 and GPT-4o, respectively, as detailed further in Section~\ref{sec:workflow}.
+
+\subsection{Backend Function Call Graph and Workflow Automation}
+\label{sec:workflow}
+
+To support interactive workflows, AGREE-Dog automates 16 critical DevOps and ProofOps steps. The backend orchestration, summarized in Figure~\ref{fig:callgraph}, manages operations ranging from artifact selection and prompt construction to automated AGREE invocations. AGREE-Dog utilizes context and history-aware agents that dynamically select relevant artifacts, perform semantic diffs, and invoke proof engines. Each backend operation is highly optimized, incurring negligible runtime overhead (less than one second per operation), as demonstrated by the empirical results in Section~\ref{sec:key-impact}.
+
+
+\subsection{Context Selection and Memory Management Optimization}
+
+Effective context selection and memory management are critical to AGREE-Dog’s ability to provide precise explanations and actionable repairs involving complex AADL artifacts, execution traces, and user instructions. Addressing these challenges requires the sophisticated, carefully optimized mechanisms embedded within AGREE-Dog’s core copilot algorithm.
+
+\subsubsection{Core Copilot Algorithm}
+\textbf{Algorithm~\ref{alg:agreedog}} embodies the central context management strategy of AGREE-Dog, as conceptually outlined in Figure~\ref{fig:agree-dog-refined-workflow}. This algorithm integrates intelligent conversational state tracking, dynamic artifact selection, and optimized memory management processes to efficiently support model verification and repair tasks.
+
+\paragraph{Optimized Dynamic Context Retrieval and Updates.}
+\textbf{Algorithm~\ref{alg:agreedog}} dynamically selects a minimal yet sufficient context—including relevant AADL source files, counterexamples, AGREE logs, and system requirements, and interactive user instructions—for accurate verification and effective repair interactions. Leveraging its integrated dynamic Context Retrieval component, the algorithm selectively imports only the most recently updated model artifacts, identified through AGREE-log updates received from OSATE\,2, by traversing dependency chains and referencing stored conversational data.
+
+By default, the context retrieval strategy excludes standard training data such as core libraries typically present in LLM training sets, thus optimizing token usage. However, users retain flexibility to explicitly include or exclude any files from the complete import chain during initialization, incorporating selected context elements into the initial prompt. Once included, these explicitly imported files remain static in memory unless updated explicitly by the user or signaled via AGREE logs. Additionally, natural-language requirement files (e.g., CSV-based inputs), not tracked by AGREE logs, are monitored independently with automatic checks performed every two seconds to detect changes.
+
+This nuero-sympolic (intersymbolic) and user-customizable selection process significantly reduces redundancy, enhances convergence speed toward correct model solutions, minimizes generative model latency, and mitigates hallucinations caused by irrelevant context.
+
+\input{high-level-algorithm}
+
+\paragraph{Memory Management Optimization Mechanism.}
+
+A critical component of Algorithm~\ref{alg:agreedog} is its internal conversational memory management subsystem, detailed fully in Appendix~A. This subsystem employs a structured, list-based representation to balance immediate responsiveness with longer-term conversational persistence. Short-term interactions are retained in readily accessible memory for efficient prompt updates, while less immediate interactions can optionally be saved locally by the user or systematically migrated into persistent storage managed by integrated Git version control. This approach allows AGREE-Dog to effectively recall prior repair strategies and interaction histories, thus enhancing iterative repairs and significantly reducing the overhead associated with manual snapshots management.
+
+Furthermore, AGREE-Dog’s memory management strategy directly facilitates ongoing system refinement. Archived conversational histories and validated repairs can subsequently be leveraged to fine-tune the underlying generative models, enabling continual improvement in the quality of explanations and repair suggestions.
+
+%Quantitative evaluations of these memory optimization benefits are presented in Section~\ref{sec:key-impact}. 
+
+%\input{mmu-algorithm}
+
+
+% AT: To do :move this to conclusion section: \remark{Even with increasingly large context windows available in state-of-the-art LLMs, efficient memory management remains highly desirable due to its significant potential to prevent performance degradation, excessive latency, and unnecessary costs.}
+%ToDo: move it to evakluation section and conclsions: 
+%An approximation for estimating token costs associated with manually Git-managed version control of repair cycles is provided in AppendixB, highlighting possible efficiency gains from this optimized memory strategy. This estimate based on best-practice guidelines and rule-of-thumb recommendations from OpenAI\cite{openai-tokens-guide,openai-pricing-guide}. Further quantitative evaluations of these benefits are presented in the evaluation Section~\ref{sec:key-impact}.
+%
+%In summary, AGREE-Dog’s integrated neuro-symbolic copilot approach—com-bining formal verification (AGREE), interactive conversational feedback, optimized memory management, user-driven customization, and efficient generative LLM interactions—consistently delivers actionable, coherent repairs within an interaction paradigm that is computationally efficient and cognitively streamlined.
+
+\subsection{Verification-Aware Feedback Loop and Repair Validity}
+
+AGREE-Dog’s neuro-symbolic reasoning, achieved by combining AGREE's formal verification with generative AI explanations, establishes a rigorous, verification-aware repair loop. Central to this process, AGREE-Dog invokes AGREE externally via API calls to ensure that all proposed repairs strictly adhere to system-wide consistency and soundness criteria.
+
+This verification-integrated approach not only acts as a safeguard against unsound or logically inconsistent model modifications but also enhances the quality of data fed into the generative model. By proactively filtering invalid suggestions, AGREE-Dog reduces the overall token volume required, thereby significantly improving LLM latency and maintaining model reliability and trustworthiness. Such integration distinctly differentiates AGREE-Dog from purely neural LLM approaches, which inherently lack logical soundness checks and may erroneously group logically distinct, yet superficially similar elements~\cite{CoqDog,CoqDogHCSS24,openai-tokens-guide, Ersa24, mirzadeh2025gsmsymbolic}.
+
+Additionally, the semantic diffing mechanism embedded in AGREE-Dog detects relevant model changes precisely across iterative repair cycles, facilitating faster convergence to formally valid solutions. This integrated neuro-symbolic loop thus effectively bridges generative AI capabilities with rigorous MBSE based formal verification.
+
+
+\subsection{Traceability, Logging, and Continuous Refinement}
+
+The extensive logging within AGREE-Dog serves dual purposes. First, it facilitates real-time diagnostics, enabling rapid identification of effective conversational interactions and successful repair strategies. As illustrated in the AGREE-Dog user interface (Figure~\ref{fig:copilot-ui}), key performance indicators—including AGREE validity status, token count, system and human return time, and LLM latency—are prominently displayed, providing users immediate feedback to gauge interaction effectiveness.
+
+Second, the detailed logs support ongoing system refinement by highlighting conversational patterns consistently associated with high-quality, formally valid repairs. This capability directly informs the metrics employed for evaluating AGREE-Dog’s performance, as further detailed in Section~\ref{sec:key-impact} and Section~\ref{sec:metrics}. By analyzing logged interaction timelines and human response metrics, AGREE-Dog identifies optimal repair strategies, promotes knowledge reuse, and reduces manual intervention, significantly enhancing both short-term repair efficiency and long-term knowledge retention.
+
+%\subsection{Evaluation Metrics Workflow}
+
+%To systematically assess AGREE-Dog’s effectiveness, we instrumented the architecture with structural and temporal metrics. Structural metrics quantify token utilization, input ratios, and repair convergence. Temporal metrics measure LLM latency and user interaction intervals. Together, these metrics provide detailed, quantifiable insight into system automation levels, human involvement, and repair efficiency.
+
+%\begin{figure}[tb]
+%  \centering
+%  \includegraphics[width=0.9\linewidth]%{evaluation-metrics.png}%
+%  \caption{Evaluation metrics collection workflow showing structural and temporal metrics, copilot log analysis, and AGREE integration points.}
+%  \label{fig:evaluation-metrics}
+%\end{figure}
+
+%This architecture section sets the foundation for Section~\ref{sec:key-impact}

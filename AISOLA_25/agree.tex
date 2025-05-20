@@ -1,0 +1,21 @@
+%\subsection{Overview}
+\label{Overview}
+AGREE provides a formal contract language for specifying \textit{assumptions} (i.e., expectations on a component's input and the environment) and \textit{guarantees} (i.e., bounds on a component's behavior).  Because AGREE is implemented as an AADL \textit{annex} in the Open Source AADL Tool Environment (OSATE), the contracts are specified directly on components in the AADL model.  AGREE then uses a k-induction model checker to prove properties about one layer of the architecture using properties allocated to subcomponents. The analysis proves correctness of (1) component interfaces, such that the output guarantees of each component must be strong enough to satisfy the input assumptions of downstream components, and (2) component implementations, such that the input assumptions of a system along with the output guarantees of its sub-components must be strong enough to satisfy its output guarantees.
+
+When a contract violation is found (i.e., when an assumption is determined to be invalid or a guarantee is unsupported), AGREE produces a counterexample consisting of values for each system variable at each execution step.  A sample counterexample is depicted in Figure~\ref{fig:cex}.  Currently, OSATE includes the AADL Simulator tool that can accept an AGREE counterexample as input and walk through the trace in the graphical editor, but it is of limited help when it comes to identifying the root cause of the contract violation.
+
+
+\begin{figure}[t] 
+	\centering 
+\includegraphics[height=0.6\textwidth, width=0.9\textwidth]{cex.png}
+	\caption{AGREE counterexample generated from the \texttt{Car} model.}
+	\label{fig:cex} 
+\end{figure}
+
+%\input{AgreeDog}
+
+
+
+
+
+

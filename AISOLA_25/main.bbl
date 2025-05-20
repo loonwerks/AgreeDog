@@ -1,0 +1,93 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{amazon2024mathematical}
+{AWS News Blog}: Prevent factual errors from llm hallucinations with
+  mathematically sound automated reasoning checks (preview).
+  \url{https://aws.amazon.com/blogs/aws/prevent-factual-errors-from-llm-hallucinations-with-mathematically-sound-automated-reasoning-checks-preview/}
+  (2024), accessed: 2025-05-11
+
+\bibitem{compositional-analysis-agree}
+Cofer, D., Gacek, A., Miller, S., Whalen, M.W., LaValley, B., Sha, L.:
+  Compositional verification of architectural models. In: Goodloe, A.E.,
+  Person, S. (eds.) NASA Formal Methods. pp. 126--140. Springer (2012)
+
+\bibitem{davis-fmics13}
+Davis, J.A., Clark, M., Cofer, D., Fifarek, A., Hinchman, J., Hoffman, J.,
+  Hulbert, B., Miller, S.P., Wagner, L.: Study on the barriers to the
+  industrial adoption of formal methods. In: Pecheur, C., Dierkes, M. (eds.)
+  Formal Methods for Industrial Critical Systems. pp. 63--77. Springer Berlin
+  Heidelberg (2013)
+
+\bibitem{feiler-aadl}
+Feiler, P.H., Gluch, D.P.: Model-Based Engineering with AADL: An Introduction
+  to the SAE Architecture Analysis \& Design Language. Addison-Wesley
+  Professional, 1st edn. (2012)
+
+\bibitem{first2023baldur}
+First, E., Rabe, M.N., Ringer, T., Brun, Y.: Baldur: Whole-proof generation and
+  repair with large language models. arXiv preprint arXiv:2303.04910  (2023)
+
+\bibitem{github-commits}
+GitHub: About commits.
+  \url{https://docs.github.com/en/get-started/using-git/about-commits} (2023),
+  accessed: May 2025
+
+\bibitem{cex-explanation}
+Kaleeswaran, A.P., Nordmann, A., Vogel, T., Grunske, L.: A systematic
+  literature review on counterexample explanation. Information and Software
+  Technology  \textbf{145} (2022)
+
+\bibitem{megill2019metamath}
+Megill, N., Wheeler, D.A.: Metamath: A computer language for mathematical
+  proofs  (2019)
+
+\bibitem{mirzadeh2025gsmsymbolic}
+Mirzadeh, S.I., Alizadeh, K., Shahrokhi, H., Tuzel, O., Bengio, S., Farajtabar,
+  M.: {GSM}-symbolic: Understanding the limitations of mathematical reasoning
+  in large language models. In: The Thirteenth International Conference on
+  Learning Representations (2025),
+  \url{https://openreview.net/forum?id=AjXkRZIvjB}
+
+\bibitem{openai-tokenizer}
+OpenAI: Tokenizer. \url{https://platform.openai.com/tokenizer} (2025),
+  accessed: May 2025
+
+\bibitem{pei2023can}
+Pei, K., Bieber, D., Shi, K., et~al.: Can large language models reason about
+  program invariants? Proceedings of the 40th International Conference on
+  Machine Learning  (July 2023)
+
+\bibitem{polu2020generative}
+Polu, S., Sutskever, I.: Generative language modeling for automated theorem
+  proving. arXiv preprint arXiv:2009.03393  (2020)
+
+\bibitem{DO-333}
+RTCA: DO-333: Formal Methods Supplement to DO-178C and DO-278A (December 2011)
+
+\bibitem{sun2024clover}
+Sun, C., Sheng, Y., Padon, O., Barrett, C.: Clover: Closed-loop verifiable code
+  generation. arXiv preprint arXiv:2310.17807  (2024)
+
+\bibitem{CoqDogHCSS24}
+Tahat, A., Hardin, D., Petz, A., Alexander, P.: Metrics for large language
+  model generated proofs in a high-assurance application domain. In: High
+  Confidence Software and Systems Conference (HCSS'24) (2024)
+
+\bibitem{CoqDog}
+Tahat, A., Hardin, D., Petz, A., Alexander, P.: Proof repair utilizing large
+  language models: A case study on the copland remote attestation proofbase.
+  In: Proceedings of International Symposium On Leveraging Applications of
+  Formal Methods Verification and Validation (AISolA) (2024)
+
+\bibitem{wu2023lemur}
+Wu, H., Barrett, C., Narodytska, N.: Lemur: Integrating large language models
+  in automated program verification. arXiv preprint arXiv:2310.04870  (2023)
+
+\bibitem{zhang2023getting}
+Zhang, S., First, E., Ringer, T.: Getting more out of large language models for
+  proofs. arXiv preprint arXiv:2305.04369  (2023)
+
+\end{thebibliography}

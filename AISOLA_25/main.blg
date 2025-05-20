@@ -1,0 +1,49 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: main.aux
+The style file: splncs04.bst
+Database file #1: biblio.bib
+Warning--I didn't find a database entry for "inspecta-url"
+Warning--empty journal in megill2019metamath
+You've used 18 entries,
+            2850 wiz_defined-function locations,
+            690 strings with 8013 characters,
+and the built_in function-call counts, 8746 in all, are:
+= -- 646
+> -- 355
+< -- 3
++ -- 145
+- -- 126
+* -- 547
+:= -- 1201
+add.period$ -- 20
+call.type$ -- 18
+change.case$ -- 126
+chr.to.int$ -- 0
+cite$ -- 19
+duplicate$ -- 801
+empty$ -- 802
+format.name$ -- 142
+if$ -- 1836
+int.to.chr$ -- 0
+int.to.str$ -- 18
+missing$ -- 175
+newline$ -- 60
+num.names$ -- 40
+pop$ -- 386
+preamble$ -- 1
+purify$ -- 96
+quote$ -- 0
+skip$ -- 167
+stack$ -- 0
+substring$ -- 325
+swap$ -- 362
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 70
+warning$ -- 1
+while$ -- 62
+width$ -- 20
+write$ -- 173
+(There were 2 warnings)

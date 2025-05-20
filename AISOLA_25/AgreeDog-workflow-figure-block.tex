@@ -1,0 +1,69 @@
+\begin{figure}[tbp]
+\centering
+\resizebox{0.97\textwidth}{!}{
+\begin{tikzpicture}[auto, node distance=1.8cm,>=latex', font=\footnotesize,
+block/.style={rectangle, draw, rounded corners, fill=blue!5, text width=7em, text centered, minimum height=3em},
+decision/.style={diamond, draw, fill=orange!10, aspect=2.5, inner sep=2pt, text width=6em, text centered},
+result/.style={rectangle, draw, fill=gray!10, text width=5em, align=center},
+annotation/.style={rectangle, draw, fill=green!10, text width=8em, align=center, minimum height=2.5em, rounded corners},
+line/.style={draw, -latex'}]
+
+% Nodes
+\node[block] (model) {Model system architecture in AADL/AGREE};
+\node[block, right=of model] (agree) {Run AGREE};
+\node[decision, right=of agree, node distance=2.5cm] (valid) {Counter-example? Valid?};
+
+\node[result, above=of valid] (proof) {Proof Complete};
+
+\node[block, below=2cm of valid, fill=blue!10] (interface) {Open AGREE-Dog interface};
+
+\node[block, right=of interface, node distance=3cm] (hints) {User adds hints and instructions};
+
+\node[block, right=of hints, node distance=3cm] (upload) {Upload model, counter-example, instructions};
+
+\node[block, below=of upload] (context) {Run Context Retrieval Mechanism};
+
+\node[block, below=of context] (explain) {Run Explanation Component};
+
+\node[block, below=of explain] (refine) {Refine/add additional instructions};
+
+\node[block, left=of refine, node distance=4cm] (update) {Update model/contracts (repair)};
+
+% Annotations
+\node[annotation, right=1.5cm of context] (anno1) {Mine saved models/conversations};
+\node[annotation, right=1.5cm of explain] (anno2) {Evaluate conversation quality};
+\node[annotation, right=1.5cm of refine] (anno3) {Fine-tune with high-quality conversations};
+
+% Paths
+\path[line] (model) -- (agree);
+\path[line] (agree) -- (valid);
+\path[line] (valid) -- node {No} (proof);
+\path[line] (valid) -- node {Yes} (interface);
+\path[line] (interface) -- (hints);
+\path[line] (hints) -- (upload);
+\path[line] (upload) -- (context);
+\path[line] (context) -- (explain);
+\path[line] (explain) -- (refine);
+\path[line] (refine) -- (update);
+
+% Adjusted Loop Path from Update to Run AGREE
+\path[line] (update.west) -- ++(-8.5,0,0) |- (agree.south);
+
+% Annotation paths
+\path[line, dashed] (context) -- (anno1);
+\path[line, dashed] (explain) -- (anno2);
+\path[line, dashed] (refine) -- (anno3);
+
+% Enclosing box
+\node[draw, dashed, inner sep=10pt, label={[align=center]below:AGREE-Dog}] 
+  (box) [fit=(interface)(hints)(upload)(context)(explain)(refine)(update)] {};
+\end{tikzpicture}
+}
+\caption{AGREE-Dog workflow illustrating the integration of formal verification with context-aware explanation and iterative model repair. %Upon detecting a valid counterexample from AGREE, the copilot interface is launched, enabling users to upload relevant artifacts and provide instructions. Context retrieval and explanation components are then invoked, guiding the refinement or repair of the model untill system wide validty is reached. The system supports both interactive user input and retrieval of prior conversations, facilitating high-quality, low-latency updates to the design under verification.
+}
+\label{fig:agree-dog-refined-workflow}
+\end{figure}
+
+
+
+

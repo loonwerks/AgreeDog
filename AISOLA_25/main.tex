@@ -1,0 +1,205 @@
+\documentclass{llncs}
+
+% \usepackage[letterpaper, margin=1.25in, tmargin=1.25in, bmargin=1.25in]{geometry}
+
+\usepackage[T1]{fontenc}
+\usepackage{float}
+%\usepackage{minicaption}
+\usepackage{breakurl}                  % Not needed if you use pdflatex only.
+\usepackage{hyperref}
+\usepackage{underscore}             % Only needed if you use pdflatex.
+\usepackage[nocompress]{cite}   
+\usepackage{makecell}
+%\pagestyle{empty}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+% \usepackage{alltt}
+\usepackage{hhline}
+\usepackage{xcolor,colortbl}
+\usepackage{mathpartir}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{subcaption}   % used for figures in experimental evaluation
+\usepackage[ruled,vlined]{algorithm2e}
+%\usepackage[linesnumbered,ruled]{algorithm2e}
+\usepackage{amsmath}
+%mmu algorithm
+%\usepackage{algorithm}
+\usepackage{algorithmic}
+\usetikzlibrary{arrows,arrows.meta,calc,positioning,backgrounds,fit,shapes,shadows,trees}
+
+\tikzset{%
+  thick arrow/.style={
+     -{Triangle[angle=120:1pt 1]},
+     line width=1.5cm, 
+     draw=teal!70
+  },
+  arrow label/.style={
+    text=white,
+    font=\sffamily\fontsize{12}{12}\selectfont,
+    align=center,
+    yshift=-1.25cm
+  },
+  set mark/.style={
+    insert path={
+      node [midway, arrow label, node contents=#1]
+    }
+  }
+}
+
+\tikzset{
+  basic/.style  = {draw,rectangle,font=\sffamily\fontsize{12}{12}\selectfont}, %text width=2cm, drop shadow},
+  root/.style   = {basic, font=\sffamily\fontsize{12}{12}\selectfont, rounded corners=2pt, thin, align=center,
+                   fill=orange!30},
+  level 0/.style = {basic, font=\sffamily\fontsize{12}{12}\selectfont, thin, align=center, fill=blue!10},
+  level 1/.style = {basic, trapezium, trapezium left angle=70, trapezium right angle=110, font=\sffamily\fontsize{12}{12}\selectfont, thin, align=center, fill=green!20},
+  level 2/.style = {basic, font=\sffamily\fontsize{12}{12}\selectfont, rounded corners=2pt, thin, align=left,
+    fill=yellow!30},
+  level 3/.style = {basic, font=\sffamily\fontsize{12}{12}\selectfont, rounded corners=2pt, thin, align=left,
+    fill=blue!20, text width=12em},
+  level 4/.style = {basic, font=\sffamily\fontsize{12}{12}\selectfont, thin, align=center, 
+    fill=green!30},
+  level 5/.style = {basic, font=\sffamily\fontsize{12}{12}\selectfont, thin, align=center, 
+    fill=orange!30},
+  level 6/.style = {basic, rectangle, font=\sffamily\fontsize{12}{12}\selectfont, thin, align=center, 
+    fill=cyan!20},
+   boxaround/.style={draw=violet, font=\sffamily\fontsize{12}{12}\selectfont, thick, dashdotted,
+     inner sep=0.8em},
+ >=latex
+}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows, positioning, shapes, fit, backgrounds}
+
+\usepackage{paralist}
+\usepackage{boxedminipage} %proof rules
+\usepackage{booktabs} %proof rules
+
+\newcommand{\imp}{\Rightarrow}
+\newcommand{\etal}{\textit{et al. }}
+\newcommand{\adhoc}{\textit{ad hoc}}
+\newcommand{\ie}{\textit{i.e.}}
+\newcommand{\etc}{\textit{etc}}
+\newcommand{\eg}{\textit{e.g.}}
+\newcommand{\konst}[1]{\ensuremath{\mbox{\sf{#1}}}}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\nil}{\konst{[\,]}}
+\newcommand{\cons}[2]{{#1}\boldsymbol{:}\boldsymbol{:}{#2}}
+\newcommand{\hollamb}{\boldsymbol{\lambda}}
+\newcommand{\itelse}[3]{\mbox{$\mbox{\tt if}\ {#1}\ \mbox{\tt then}\ {#2}\
+    \mbox{\tt else}\ {#3}$}}
+\newcommand{\set}[1]{\{ {#1} \}}
+\newcommand{\Lang}[1]{\ensuremath{{\cal L}({#1})}}
+\newcommand{\inbox}[1] {\begin{center}
+                         \framebox{\parbox{0.984\textwidth}{#1}}
+                         \end{center}}
+\newcommand{\HOL}{\textsc{HOL}}
+
+% for backslashes in alltt environments
+\newcommand{\bs}{\texttt{\symbol{92}}}
+
+\usepackage{scalerel}
+\newcommand\sbullet[1][.6]{\mathbin{\ThisStyle{\vcenter{\hbox{%
+  \scalebox{#1}{$\SavedStyle\bullet$}}}}}%
+}
+
+\DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{l}{it}
+
+%%%%%%%
+%\input{../final/lib/coq-listings}
+
+\begin{document}
+%
+\title{Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}%Towards Explainable Compositional Reasoning}%Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}
+%
+%\titlerunning{Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}
+% If the paper title is too long for the running head, you can set
+% an abbreviated paper title here
+%
+\author{Amer Tahat\inst{1} \and
+  Isaac Aumundson\inst{1} \and
+  David Hardin\inst{1} \and
+  Darren Cofer\inst{1}}
+%
+\authorrunning{A. Tahat et al.}
+% First names are abbreviated in the running head.
+% If there are more than two authors, 'et al.' is used.
+%
+\institute{Collins Aerospace\\ Cedar Rapids, IA 52498  USA\\
+  \email{\{amer.tahat,isaac.aumndson, david.hardin, daren.cofer\}@collins.com}
+%\and Institute for Information Sciences \\ The
+%  University of Kansas \\ Lawrence, KS 66045  USA\\
+ % \email{\{ampetz,palexand\}@ku.edu}
+  }
+%
+
+%%%%%%%%
+\maketitle
+
+\begin{abstract}
+Formal verification tools like model checkers have long demonstrated their capability to ensure mission-critical properties are satisfied, yet their adoption in the aerospace and defense industries remains limited. Surveys consistently identify difficulty in interpreting analysis results, especially counterexamples, as a primary barrier. Previously, our team developed AGREE, an assume-guarantee compositional reasoning tool for architectural models, which generates detailed but often challenging-to-interpret counterexamples.
+%
+In this paper, we introduce AGREE-Dog, an open-source generative AI copilot integrated into the OSATE 2 IDE to enhance explainable compositional reasoning with AGREE and AADL. AGREE-Dog automates 16 DevOps and ProofOps steps, utilizing a novel context-selection and memory management system to efficiently manage evolving artifacts and historical interactions.
+%
+We introduce structural and temporal metrics to assess the typically overlooked human contributions in generative AI-supported workflows. Evaluations using 13 aerospace fault-injection scenarios show a significant reduction in manual effort (less than 0.1\,\% of tokens authored by users), rapid counterexample repair convergence (84.6\,\% resolved in a single iteration), and low latency (under 22 seconds average LLM response time, with negligible overhead from AGREE-Dog operations). %The context management system successfully constrained the total scenario tokens to 32\,K, effectively capturing artifacts and histories otherwise exceeding several thousands LoC of GitHub version control snapshots and extensive LLM-generated code. 
+These promising results motivate further exploration into into explainable MBSE engineering.
+\keywords{LLM \and Formal verification \and MBSE \and AGREE \and AADL \and Compositional reasoning}
+\end{abstract}
+
+\section{Introduction}
+\label{sec:introduction}
+\input{introduction}
+
+\section{Explainable AGREE}
+\label{sec:Explainable-AGREE}
+\subsection{Overview}
+\input{agree}
+\subsection{Making Counterexamples Actionable}
+\label{sec:actionable}
+\input{actionable}
+
+\section{Motivations and Core Challenges}
+\label{sec:motivations-core-challenges}
+\input{Motivations-and-Design-Bottlenecks}
+%\label{sec:agreedog-design}
+%\input{agreedog-design}
+
+
+\section{AGREE-Dog Architecture}
+\label{sec:design-architecture}
+\input{agreedog-design-achitecture}
+
+
+\section{Evaluation Metrics}
+\label{sec:metrics}
+\input{metrics.tex}
+
+
+%\section{Evaluation Workflow}
+%\label{sec:CQAS}
+%\input{CQAS.tex}
+
+\section{Experimental Evaluation}
+\label{sec:key-impact}
+\input{Evaluation}
+
+%\section{Limitations and Future Work}
+%\label{sec:limitations}
+%\input{limitations-and-future-work}
+
+\section{Conclusions and Future Work}
+\label{sec:conclusions}
+\input{conclusion}
+
+\section*{Acknowledgments}
+This work was funded by DARPA contract FA8750-24-9-1000. The views, opinions and/or findings expressed are those of the authors and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+
+\bibliographystyle{splncs04}
+\bibliography{biblio}
+\appendix
+\section{Appendix}
+\label{appendix:test-scenarios}
+\input{Appendix.tex}
+\end{document}
+

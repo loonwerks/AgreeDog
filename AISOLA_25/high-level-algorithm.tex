@@ -1,0 +1,70 @@
+%\section algorithm 
+\begin{algorithm}[htbp]
+\caption{AGREE-Dog Interactive Copilot Prompt Construction and Counterexample Handling}
+\label{alg:agreedog}
+\KwIn{AADL Model Files, Counterexample File (optional), System Requirements (optional)}
+\KwOut{Prompt for GPT-based AGREE-Dog Copilot, Actionable Repair Suggestions}
+
+\textbf{Initialization:}\\
+Load command-line arguments: working directory, start file, counterexample, requirements file\;
+Load OpenAI API key\;
+Initialize logging system\;
+
+\textbf{Main Procedure:}\\
+\eIf{requirement file provided}{
+    Load and include requirements in prompt context\;
+}{
+    Set requirements context to \textit{"No sys\_requirement file provided"}\;
+}
+
+\textbf{Prompt Construction:}\\
+Read top-level AADL file from provided workspace\;
+Parse import chain and extract relevant AADL files (avoid standard libraries)\;
+\If{counterexample provided (CLI or file)}{
+    Load counterexample into context\;
+}
+\Else{
+    Search for recent counterexamples:
+    \begin{itemize}
+        \item Check command-line provided counterexample path first.
+        \item If unavailable, parse \texttt{agree.log} for failing contracts.
+        \item Match failing contracts with available counterexample XML/text files.
+        \item Extract and format counterexample(s) for inclusion.
+    \end{itemize}
+}
+
+Construct comprehensive prompt with:
+\begin{enumerate}
+    \item System Requirements (if available)
+    \item AADL Model Content
+    \item Counterexample(s) Explanation
+    \item Explicit instructions for GPT (repair suggestions within AADL syntax)
+\end{enumerate}
+
+\textbf{Interaction and Feedback Loop (via Dash UI):}\\
+\While{copilot session active}{
+    Receive additional user input (optional)\;
+    Combine with the current prompt context (if any)\;
+    Submit prompt to GPT-4o/GPT model via OpenAI API\;
+    Retrieve response:
+    \begin{itemize}
+        \item Explain verification failures clearly
+        \item Suggest repairs in AADL syntax, respecting requirements
+    \end{itemize}
+    Present GPT response to user\;
+    Log interaction and update metrics (latency, tokens used, etc.)\;
+    \If{user applies modifications}{
+        Extract AADL repair suggestions from GPT response\;
+        Safely overwrite the original AADL model file\;
+        Notify user of successful update or handle exceptions\;
+    }
+}
+
+\textbf{Quality Assessment and Logging:}\\
+Automatically record metrics (timestamps, token use, latency)\;
+Store interaction logs for future analysis and fine-tuning\;
+
+\textbf{Shutdown Procedure:}\\
+On user request, terminate the copilot session gracefully\;
+
+\end{algorithm}
