@@ -6,8 +6,8 @@
 \bibitem{amazon2024mathematical}
 {AWS News Blog}: Prevent factual errors from llm hallucinations with
   mathematically sound automated reasoning checks (preview).
-  \url{https://aws.amazon.com/blogs/aws/prevent-factual-errors-from-llm-hallucinations-with-mathematically-sound-automated-reasoning-checks-preview/}
-  (2024), accessed: 2025-05-11
+  \href{https://aws.amazon.com/blogs/aws/prevent-factual-errors-from-llm-hallucinations-with-mathematically-sound-automated-reasoning-checks-preview/}{AWS
+  Blog Post} (2024), accessed: 2025-05-11
 
 \bibitem{compositional-analysis-agree}
 Cofer, D., Gacek, A., Miller, S., Whalen, M.W., LaValley, B., Sha, L.:
@@ -30,10 +30,9 @@ Feiler, P.H., Gluch, D.P.: Model-Based Engineering with AADL: An Introduction
 First, E., Rabe, M.N., Ringer, T., Brun, Y.: Baldur: Whole-proof generation and
   repair with large language models. arXiv preprint arXiv:2303.04910  (2023)
 
-\bibitem{github-commits}
-GitHub: About commits.
-  \url{https://docs.github.com/en/get-started/using-git/about-commits} (2023),
-  accessed: May 2025
+\bibitem{inspecta}
+{INSPECTA Project}: Inspecta.
+  \url{https://loonwerks.com/projects/inspecta.html}, accessed: 2025-05-19
 
 \bibitem{cex-explanation}
 Kaleeswaran, A.P., Nordmann, A., Vogel, T., Grunske, L.: A systematic
@@ -51,9 +50,10 @@ Mirzadeh, S.I., Alizadeh, K., Shahrokhi, H., Tuzel, O., Bengio, S., Farajtabar,
   Learning Representations (2025),
   \url{https://openreview.net/forum?id=AjXkRZIvjB}
 
-\bibitem{openai-tokenizer}
-OpenAI: Tokenizer. \url{https://platform.openai.com/tokenizer} (2025),
-  accessed: May 2025
+\bibitem{sysmlv2}
+{Object Management Group (OMG)}: Systems modeling language (sysml) v2
+  specification. \href{https://github.com/Systems-Modeling/SysML-v2-Release}
+  (2024), accessed: 2025-05-19
 
 \bibitem{pei2023can}
 Pei, K., Bieber, D., Shi, K., et~al.: Can large language models reason about

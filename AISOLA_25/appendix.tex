@@ -1,28 +1,8 @@
 %\appendix
-\label{appendix:test-scenarios}
-\pagebreak
-\begin{table}[t]
-\centering
-\begin{tabular}{|l|c|c|c|}
-\hline
-\textbf{Artifact Type} & \textbf{Est. LoC} & \textbf{Est. LoC (16 it.)} & \textbf{Est. Tokens} \\
-\hline
-\makecell[l]{AADL Source\\Code} & 400 & 6,400 & ~76,800 \\
-\makecell[l]{Counterexamples, Logs,\\and Requirements} & 200 & 3,200 & ~38,400 \\
-\makecell[l]{LLM-Generated Explanations\\and Patches} & 300 & 4,800 & ~57,600 \\
-\hline
-\textbf{Sum} & \textbf{900} & \textbf{14,400} & \textbf{~172,800} \\
-\hline
-\end{tabular}
-\caption{Estimated upper bound of GitHub-tracked artifact volume and equivalent token count across 16 repair iterations. \textbf{Est. LoC} = Estimated lines of code per iteration. \textbf{Est. LoC (16 it.)} = Cumulative line count assuming 16 iterations. \textbf{Est. Tokens} = Approximate token count assuming 12 tokens per line~\cite{openai-tokenizer}.}
-\label{tab:github-estimate}
-\end{table}
-
-To estimate the volume of artifacts typically committed in iterative fault repair workflows, we assume one version control snapshot per repair cycle. While the actual commit frequency may vary across teams and tools, this assumption reflects a common practice in GitHub-based development, where incremental fixes are frequently versioned as separate commits~\cite{github-commits}.
-
 %%%%%%
-\pagebreak
 
+\input{mmu-algorithm}
+%%%%
 \begin{figure}[t]
   \centering
   \includegraphics[height=0.6\textwidth, width=1.0\textwidth]{backend-callgraph.png}
@@ -31,7 +11,7 @@ To estimate the volume of artifacts typically committed in iterative fault repai
 \end{figure}
 
 %%%%%
-\pagebreak
 
-\input{mmu-algorithm}
+
+
 

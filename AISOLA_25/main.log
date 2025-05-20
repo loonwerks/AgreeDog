@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.8.18)  19 MAY 2025 22:35
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.8.18)  20 MAY 2025 01:02
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1026,9 +1026,6 @@ LaTeX Warning: Label `sec:design-architecture' multiply defined.
 
 LaTeX Warning: Label `sec:metrics' multiply defined.
 
-
-LaTeX Warning: Label `appendix:test-scenarios' multiply defined.
-
 )
 \openout1 = `main.aux'.
 
@@ -1113,57 +1110,52 @@ LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 1
 (/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )
-Overfull \hbox (3.59529pt too wide) in paragraph at lines 141--147
+Overfull \hbox (3.59529pt too wide) in paragraph at lines 141--146
 []\T1/cmr/m/n/9 Formal ver-i-fi-ca-tion tools like model check-ers have long de
 mon-
  []
 
-(./introduction.tex
+(./introduction.tex [1
+
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
 Overfull \hbox (4.65424pt too wide) in paragraph at lines 6--7
 []\T1/cmr/m/n/10 The DARPA Pipelined Rea-son-ing of Ver-i-fiers En-abling Ro-bu
 st Sys-tems (PRO-
  []
 
-[1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+Underfull \vbox (badness 1102) has occurred while \output is active []
 
-LaTeX Warning: Citation `inspecta-url' on page 2 undefined on input line 8.
-
-
-Underfull \vbox (badness 2158) has occurred while \output is active []
-
- [2]
-
-LaTeX Warning: Reference `sec:agreedog-design' on page 3 undefined on input lin
-e 23.
-
-) (./agree.tex
+ [2])
+(./agree.tex
 <cex.png, id=92, 520.19344pt x 384.6872pt>
 File: cex.png Graphic file (type png)
 <use cex.png>
 Package pdftex.def Info: cex.png  used on input line 10.
 (pdftex.def)             Requested size: 312.4042pt x 208.27975pt.
-) (./actionable.tex
-<AGREE-DOG-high-rs.png, id=94, 1849.91125pt x 1052.93375pt>
+) (./actionable.tex [3]
+<AGREE-DOG-high-rs.png, id=105, 1849.91125pt x 1052.93375pt>
 File: AGREE-DOG-high-rs.png Graphic file (type png)
 <use AGREE-DOG-high-rs.png>
 Package pdftex.def Info: AGREE-DOG-high-rs.png  used on input line 10.
 (pdftex.def)             Requested size: 347.11156pt x 208.26944pt.
- [3])
-(./Motivations-and-Design-Bottlenecks.tex [4 <./cex.png>]
-<woof-pic-6.png, id=115, 1281.78876pt x 632.3625pt>
+) (./Motivations-and-Design-Bottlenecks.tex
+[4 <./cex.png>]
+<woof-pic-6.png, id=116, 1281.78876pt x 632.3625pt>
 File: woof-pic-6.png Graphic file (type png)
 <use woof-pic-6.png>
 Package pdftex.def Info: woof-pic-6.png  used on input line 21.
 (pdftex.def)             Requested size: 347.12354pt x 171.25156pt.
-)
-(./agreedog-design-achitecture.tex (./AgreeDog-workflow-figure-block.tex
+) (./agreedog-design-achitecture.tex [5 <./AGREE-DOG-high-rs.png>] (./AgreeDog-
+workflow-figure-block.tex
 Overfull \hbox (1.1031pt too wide) in paragraph at lines 61--61
  \T1/cmr/m/n/9 model/contracts 
  []
 
-[5 <./AGREE-DOG-high-rs.png>]) [6 <./woof-pic-6.png>] [7]
+) [6 <./woof-pic-6.png>]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [7]
 (./high-level-algorithm.tex
 Overfull \hbox (30.39633pt too wide) detected at line 70
 [][] 
@@ -1178,104 +1170,75 @@ Overfull \hbox (10.70465pt too wide) in paragraph at lines 70--71
 ab-lishes a rig-or-ous, verification-
  []
 
-
-LaTeX Warning: Citation `openai-tokens-guide' on page 10 undefined on input lin
-e 72.
-
-
-LaTeX Warning: Citation `Ersa24' on page 10 undefined on input line 72.
-
-[10]) (./metrics.tex
+[10]) (./metrics.tex [11]
 Overfull \hbox (13.56982pt too wide) in paragraph at lines 38--39
 []\T1/cmr/m/n/10 Each cy-cle be-gins with a \T1/cmtt/m/n/10 start_-file_-read \
 T1/cmr/m/n/10 mes-sage and ends with a \T1/cmtt/m/n/10 validity_-
  []
 
-[11] [12]) (./Evaluation.tex (./CQAS.tex
+[12]) (./Evaluation.tex (./CQAS.tex
 LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <9> not available
 (Font)              Font shape `T1/cmtt/m/n' tried instead on input line 31.
-) [13]
-(./Evaluation-metrics-figureblock.tex
-<repair-histogram.png, id=231, 462.528pt x 346.896pt>
+) [13] (./Evaluation-metrics-figureblock.tex
+<repair-histogram.png, id=232, 462.528pt x 346.896pt>
 File: repair-histogram.png Graphic file (type png)
 <use repair-histogram.png>
 Package pdftex.def Info: repair-histogram.png  used on input line 8.
 (pdftex.def)             Requested size: 208.27623pt x 156.20761pt.
-) [14 <./repair-histogram.png>]
+)
 Overfull \hbox (1.39273pt too wide) in paragraph at lines 33--34
 []\T1/cmr/m/n/10 AGREE-Dog demon-strated sig-nif-i-cant com-pu-ta-tional and co
 g-ni-tive ef-fi-ciency
  []
 
-) (./conclusion.tex [15]) (./main.bbl
-Underfull \hbox (badness 10000) in paragraph at lines 7--11
-[]\T1/cmr/m/n/9 AWS News Blog: Pre-vent fac-tual er-rors from llm hal-
+[14]
+Underfull \vbox (badness 2253) has occurred while \output is active []
+
+ [15 <./repair-histogram.png>]) (./conclusion.tex) (./main.bbl [16]
+Underfull \hbox (badness 3977) in paragraph at lines 34--36
+[]\T1/cmr/m/n/9 INSPECTA Project: In-specta. []$\T1/cmtt/m/n/9 https : / / loon
+werks . com / projects / inspecta .
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 7--11
-\T1/cmr/m/n/9 lu-ci-na-tions with math-e-mat-i-cally sound au-to-mated rea-son-
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 7--11
-\T1/cmr/m/n/9 ing checks (pre-view). []$\T1/cmtt/m/n/9 https : / / aws . amazon
- . com / blogs / aws /
- []
-
-
-Overfull \hbox (185.86844pt too wide) in paragraph at lines 7--11
-\T1/cmtt/m/n/9 prevent-[]factual-[]errors-[]from-[]llm-[]hallucinations-[]with-
-[]mathematically-[]sound-[]automated-[]reasoning-[]checks-[]preview/$[]
- []
-
-[16]
-Underfull \hbox (badness 10000) in paragraph at lines 34--37
-[]\T1/cmr/m/n/9 GitHub: About com-mits. []$\T1/cmtt/m/n/9 https : / / docs . gi
-thub . com / en / get-[]started /
- []
-
-) (./appendix.tex [17]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [18]
-<backend-callgraph.png, id=280, 1474.50874pt x 515.9275pt>
-File: backend-callgraph.png Graphic file (type png)
-<use backend-callgraph.png>
-Package pdftex.def Info: backend-callgraph.png  used on input line 28.
-(pdftex.def)             Requested size: 347.11708pt x 208.27246pt.
-
-(./mmu-algorithm.tex
+) (./appendix.tex (./mmu-algorithm.tex
 Overfull \hbox (15.0pt too wide) detected at line 45
 [][] 
  []
 
-)) [19 <./backend-callgraph.png>] [20]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 204.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 204.
+[17])
+<backend-callgraph.png, id=275, 1474.50874pt x 515.9275pt>
+File: backend-callgraph.png Graphic file (type png)
+<use backend-callgraph.png>
+Package pdftex.def Info: backend-callgraph.png  used on input line 8.
+(pdftex.def)             Requested size: 347.11708pt x 208.27246pt.
+) [18] [19 <./backend-callgraph.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 203.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 203.
  (./main.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 204.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 204.
-Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 3CAF9DAE0CA5ABDA8DA4EE2EFDC211BD;95.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 203.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 203.
 
 
-LaTeX Warning: There were undefined references.
+Package rerunfilecheck Warning: File `main.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
 
+Package rerunfilecheck Info: Checksums for `main.out':
+(rerunfilecheck)             Before: B85326311796E341E4EFBEA5551D49DF;105
+(rerunfilecheck)             After:  908E40C0767A463CEE23500059CF3026;104.
 
 LaTeX Warning: There were multiply-defined labels.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 204.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 203.
  ) 
 Here is how much of TeX's memory you used:
- 24395 strings out of 481239
- 471772 string characters out of 5920377
- 766266 words of memory out of 5000000
- 38994 multiletter control sequences out of 15000+600000
+ 24388 strings out of 481239
+ 471629 string characters out of 5920377
+ 762097 words of memory out of 5000000
+ 38988 multiletter control sequences out of 15000+600000
  550713 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 62i,16n,100p,1347b,934s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 62i,16n,100p,1349b,934s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.enc}{/usr/share/texmf/
 fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
@@ -1294,10 +1257,10 @@ ic/cm-super/sfti0700.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti0900
 .pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti1000.pfb></usr/share/tex
 mf/fonts/type1/public/cm-super/sftt0900.pfb></usr/share/texmf/fonts/type1/publi
 c/cm-super/sftt1000.pfb>
-Output written on main.pdf (20 pages, 1160813 bytes).
+Output written on main.pdf (19 pages, 1156535 bytes).
 PDF statistics:
- 385 PDF objects out of 1000 (max. 8388607)
- 312 compressed objects within 4 object streams
- 106 named destinations out of 1000 (max. 500000)
+ 381 PDF objects out of 1000 (max. 8388607)
+ 310 compressed objects within 4 object streams
+ 105 named destinations out of 1000 (max. 500000)
  142 words of extra memory for PDF output out of 10000 (max. 10000000)
 

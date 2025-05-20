@@ -3,47 +3,51 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: splncs04.bst
 Database file #1: biblio.bib
-Warning--I didn't find a database entry for "inspecta-url"
+I was expecting a `,' or a `}'---line 8 of file biblio.bib
+ : 
+ : @misc{inspecta,
+(Error may have been on previous line)
+I'm skipping whatever remains of this entry
 Warning--empty journal in megill2019metamath
 You've used 18 entries,
             2850 wiz_defined-function locations,
-            690 strings with 8013 characters,
-and the built_in function-call counts, 8746 in all, are:
-= -- 646
+            689 strings with 8075 characters,
+and the built_in function-call counts, 8692 in all, are:
+= -- 639
 > -- 355
 < -- 3
 + -- 145
 - -- 126
-* -- 547
-:= -- 1201
+* -- 541
+:= -- 1193
 add.period$ -- 20
 call.type$ -- 18
 change.case$ -- 126
 chr.to.int$ -- 0
 cite$ -- 19
-duplicate$ -- 801
-empty$ -- 802
+duplicate$ -- 796
+empty$ -- 796
 format.name$ -- 142
-if$ -- 1836
+if$ -- 1823
 int.to.chr$ -- 0
 int.to.str$ -- 18
 missing$ -- 175
 newline$ -- 60
 num.names$ -- 40
-pop$ -- 386
+pop$ -- 389
 preamble$ -- 1
 purify$ -- 96
 quote$ -- 0
 skip$ -- 167
 stack$ -- 0
-substring$ -- 325
-swap$ -- 362
+substring$ -- 317
+swap$ -- 360
 text.length$ -- 3
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 70
 warning$ -- 1
-while$ -- 62
+while$ -- 61
 width$ -- 20
-write$ -- 173
-(There were 2 warnings)
+write$ -- 172
+(There was 1 error message)

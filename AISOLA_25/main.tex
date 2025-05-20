@@ -1,7 +1,7 @@
 \documentclass{llncs}
 
 % \usepackage[letterpaper, margin=1.25in, tmargin=1.25in, bmargin=1.25in]{geometry}
-
+%\usepackage{url}
 \usepackage[T1]{fontenc}
 \usepackage{float}
 %\usepackage{minicaption}
@@ -111,14 +111,14 @@
 
 \begin{document}
 %
-\title{Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}%Towards Explainable Compositional Reasoning}%Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}
+\title{A Neuro-Symbolic Approach to Enhanced Model-Based Systems Engineering}%Towards Explainable Compositional Reasoning}%Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}
 %
 %\titlerunning{Assume-Guarantee Reasoning Environment Copilot (AGREE-Dog)}
 % If the paper title is too long for the running head, you can set
 % an abbreviated paper title here
 %
-\author{Amer Tahat \and
-  Isaac Amundson \and
+\author{Amer Tahat\and
+  Isaac Aumundson \and
   David Hardin \and
   Darren Cofer}
 %
@@ -142,8 +142,7 @@ Formal verification tools like model checkers have long demonstrated their capab
 %
 In this paper, we introduce AGREE-Dog, an open-source generative AI copilot integrated into the OSATE IDE to enhance explainable compositional reasoning with AGREE and AADL. AGREE-Dog automates 16 DevOps and ProofOps steps, utilizing a novel context-selection and memory management system to efficiently manage evolving artifacts and historical interactions.
 %
-We introduce structural and temporal metrics to assess the typically overlooked human contributions in generative AI-supported workflows. Evaluations using 13 aerospace fault-injection scenarios show a significant reduction in manual effort (less than 0.1\,\% of tokens authored by users), rapid counterexample repair convergence (84.6\,\% resolved in a single iteration), and low latency (under 22 seconds average LLM response time, with negligible overhead from AGREE-Dog operations). %The context management system successfully constrained the total scenario tokens to 32\,K, effectively capturing artifacts and histories otherwise exceeding several thousands LoC of GitHub version control snapshots and extensive LLM-generated code. 
-These promising results motivate further exploration into into explainable MBSE engineering.
+We introduce structural and temporal metrics to evaluate the typically overlooked human contributions in generative AI-supported workflows. Evaluations using 13 UV fault-injection scenarios demonstrate a significant reduction in manual effort (less than 0.1\,\% of tokens authored by users), rapid convergence of counterexample repairs (84.6\,\% resolved in a single iteration, accuracy increasing to about 92\,\% after two iterations, and reaching 100\,\% within three iterations), and low latency (average LLM response under 22 seconds, with negligible AGREE-Dog computational overhead). We also discuss limitations and future work. These promising results motivate further exploration into explainable model-based systems engineering (MBSE).
 \keywords{LLM \and Formal verification \and MBSE \and AGREE \and AADL \and Compositional reasoning}
 \end{abstract}
 

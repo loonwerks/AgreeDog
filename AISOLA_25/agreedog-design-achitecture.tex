@@ -12,7 +12,7 @@ AGREE-Dog features an intuitive, streamlined user interface (UI), (Figure~\ref{f
 
 A fundamental design principle of this UI is to balance transparency with abstraction—clearly presenting operational outcomes without burdening users with underlying complexities. This approach promotes efficiency, productivity, and verification effectiveness.
 
-At the center of user interaction is the \textit{Feedback} button, which synchronizes the internal state of OSATE with AGREE-Dog, updating its variables and internal data structures. This synchronization ensures coherence between AGREE-Dog's conversational state and the current OSATE project status, thus setting the stage for effective model analysis and refinement—detailed further in the next sections.%sequel.
+At the center of user interaction is the \textit{Feedback} button, which synchronizes the internal state of OSATE with AGREE-Dog, updating its variables and internal data structures. This synchronization ensures coherence between AGREE-Dog's conversational state and the current OSATE\,2 project status, thus setting the stage for effective model analysis and refinement—detailed further in the next sections.%sequel.
 %
 
 We complement this mechanism, with the \textit{Insert} button which enables seamless integration of AGREE-Dog’s suggested model repairs directly into OSATE,
@@ -69,7 +69,7 @@ Furthermore, AGREE-Dog’s memory management strategy directly facilitates ongoi
 
 AGREE-Dog’s neuro-symbolic reasoning, achieved by combining AGREE's formal verification with generative AI explanations, establishes a rigorous, verification-aware repair loop. Central to this process, AGREE-Dog invokes AGREE externally via API calls to ensure that all proposed repairs strictly adhere to system-wide consistency and soundness criteria.
 
-This verification-integrated approach not only acts as a safeguard against unsound or logically inconsistent model modifications but also enhances the quality of data fed into the generative model. By proactively filtering invalid suggestions, AGREE-Dog reduces the overall token volume required, thereby significantly improving LLM latency and maintaining model reliability and trustworthiness. Such integration distinctly differentiates AGREE-Dog from purely neural LLM approaches, which inherently lack logical soundness checks and may erroneously group logically distinct, yet superficially similar elements~\cite{CoqDog,CoqDogHCSS24,openai-tokens-guide, Ersa24, mirzadeh2025gsmsymbolic}.
+This verification-integrated approach not only acts as a safeguard against unsound or logically inconsistent model modifications but also enhances the quality of data fed into the generative model. By proactively filtering invalid suggestions, AGREE-Dog reduces the overall token volume required, thereby significantly improving LLM latency and maintaining model reliability and trustworthiness. Such integration distinctly differentiates AGREE-Dog from purely neural LLM approaches, which inherently lack logical soundness checks and may erroneously group logically distinct, yet superficially similar elements~\cite{CoqDog,CoqDogHCSS24,mirzadeh2025gsmsymbolic}.
 
 Additionally, the semantic diffing mechanism embedded in AGREE-Dog detects relevant model changes precisely across iterative repair cycles, facilitating faster convergence to formally valid solutions. This integrated neuro-symbolic loop thus effectively bridges generative AI capabilities with rigorous MBSE based formal verification.
 
