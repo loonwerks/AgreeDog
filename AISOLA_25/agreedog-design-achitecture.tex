@@ -12,7 +12,7 @@ AGREE-Dog features an intuitive, streamlined user interface (UI), (Figure~\ref{f
 
 A fundamental design principle of this UI is to balance transparency with abstraction—clearly presenting operational outcomes without burdening users with underlying complexities. This approach promotes efficiency, productivity, and verification effectiveness.
 
-At the center of user interaction is the \textit{Feedback} button, which synchronizes the internal state of OSATE with AGREE-Dog, updating its variables and internal data structures. This synchronization ensures coherence between AGREE-Dog's conversational state and the current OSATE\,2 project status, thus setting the stage for effective model analysis and refinement—detailed further in the next sections.%sequel.
+At the center of user interaction is the \textit{Feedback} button, which synchronizes the internal state of OSATE with AGREE-Dog, updating its variables and internal data structures. This synchronization ensures coherence between AGREE-Dog's conversational state and the current OSATE project status, thus setting the stage for effective model analysis and refinement—detailed further in the next sections.%sequel.
 %
 
 We complement this mechanism, with the \textit{Insert} button which enables seamless integration of AGREE-Dog’s suggested model repairs directly into OSATE,
@@ -23,8 +23,7 @@ User-driven requests or specific instructions are submitted via the \textit{Subm
 
 Additional UI elements enhance interaction quality and knowledge retention. The \textit{Save} button allows users to archive conversational histories for later review or further analysis and evaluations, as shown in Section~\ref{sec:key-impact}, while the integrated \textit{Git} control provides mechanisms for persistent storage, sharing of verification outcomes, and collaborative insight generation. 
 
-Moreover, advanced configurations are accessible via the dedicated \textit{Settings} menu, %AT: ToDo to add Fig here or in the appendix
-allowing users to customize interaction workflows and select optimal LLM models tailored to specific tasks, such as explanation and inspection using GPT-O3, or rapid code repair through the Inspection and Code Repair agents powered by GPT-O3 and GPT-4o, respectively, as detailed further in Section~\ref{sec:workflow}.
+Moreover, advanced configurations are accessible via the dedicated \textit{Settings} menu, allowing users to customize interaction workflows and select optimal LLM models tailored to specific tasks—such as generating explanations and repair suggestions (best supported by GPT-O3), or facilitating rapid implementation of code repairs (ideally powered by GPT-4o), as further detailed in Section~\ref{sec:workflow}.
 
 \subsection{Backend Function Call Graph and Workflow Automation}
 \label{sec:workflow}
