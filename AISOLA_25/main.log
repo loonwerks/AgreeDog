@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.8.18)  20 MAY 2025 01:02
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2024.8.18)  20 MAY 2025 01:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1224,8 +1224,8 @@ Package rerunfilecheck Warning: File `main.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `main.out':
-(rerunfilecheck)             Before: B85326311796E341E4EFBEA5551D49DF;105
-(rerunfilecheck)             After:  908E40C0767A463CEE23500059CF3026;104.
+(rerunfilecheck)             Before: 65AFD023F58D5FE7D746F6860E6C7B92;115
+(rerunfilecheck)             After:  CBE91B1DCD073806FC9B5C5706815BA9;123.
 
 LaTeX Warning: There were multiply-defined labels.
 
@@ -1234,7 +1234,7 @@ Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 203.
 Here is how much of TeX's memory you used:
  24388 strings out of 481239
  471629 string characters out of 5920377
- 762097 words of memory out of 5000000
+ 762116 words of memory out of 5000000
  38988 multiletter control sequences out of 15000+600000
  550713 words of font info for 64 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -1257,7 +1257,7 @@ ic/cm-super/sfti0700.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti0900
 .pfb></usr/share/texmf/fonts/type1/public/cm-super/sfti1000.pfb></usr/share/tex
 mf/fonts/type1/public/cm-super/sftt0900.pfb></usr/share/texmf/fonts/type1/publi
 c/cm-super/sftt1000.pfb>
-Output written on main.pdf (19 pages, 1156535 bytes).
+Output written on main.pdf (19 pages, 1157412 bytes).
 PDF statistics:
  381 PDF objects out of 1000 (max. 8388607)
  310 compressed objects within 4 object streams
